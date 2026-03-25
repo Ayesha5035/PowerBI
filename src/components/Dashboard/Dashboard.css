@@ -1,20 +1,19 @@
 .dashboard {
-  margin-left: 260px;
   padding: 30px;
+  transition: margin-left 0.3s ease;
   animation: fadeIn 0.5s ease;
+  margin-top: 70px;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.dashboard.open {
+  margin-left: 260px;
 }
 
+.dashboard.closed {
+  margin-left: 80px;
+}
+
+/* Make sure content doesn't overlap with fixed navbar */
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -39,6 +38,7 @@
   align-items: center;
   gap: 8px;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  cursor: pointer;
 }
 
 .new-report:hover {
@@ -94,4 +94,15 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

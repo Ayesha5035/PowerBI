@@ -1,8 +1,9 @@
 import React from "react";
-import { FaHome, FaPlus, FaChartBar, FaCog, FaFolder, FaStar } from "react-icons/fa";
+import { FaHome, FaPlus, FaChartBar, FaCog, FaFolder, FaStar, FaBars } from "react-icons/fa";
 import "./Sidebar.css";
+import logo from "../../assets/logo.png";
 
-function Sidebar({ activeTab, setActiveTab }) {
+function Sidebar({ activeTab, setActiveTab, sidebarOpen, toggleSidebar }) {
   const menuItems = [
     { id: "home", icon: <FaHome />, label: "Home" },
     { id: "create", icon: <FaPlus />, label: "Create" },
@@ -13,8 +14,29 @@ function Sidebar({ activeTab, setActiveTab }) {
   ];
 
   return (
-    <div className="sidebar">
-      <div className="logo">Power BI Dashboard</div>
+    <div className={`sidebar ${sidebarOpen ? "open" : "closed"}`}>
+      {/* Header with hamburger + logo + text */}
+      <div className="sidebar-header">
+        <FaBars 
+          onClick={toggleSidebar} 
+          className="menu-icon"
+        />
+        {sidebarOpen && (
+          <div className="logo-container">
+            <span className="logo-text">Industry 4.0</span>
+          </div>
+        )}
+        {!sidebarOpen && (
+          <div className="logo-collapsed">
+        
+          </div>
+        )}
+      </div>
+
+      {/* Menu divider line */}
+      <div className="menu-divider"></div>
+
+      {/* Menu items */}
       <ul>
         {menuItems.map((item) => (
           <li 
@@ -23,7 +45,11 @@ function Sidebar({ activeTab, setActiveTab }) {
             onClick={() => setActiveTab(item.id)}
           >
             {item.icon}
-            <span>{item.label}</span>
+            {sidebarOpen ? (
+              <span>{item.label}</span>
+            ) : (
+              <span className="menu-label-closed">{item.label}</span>
+            )}
           </li>
         ))}
       </ul>

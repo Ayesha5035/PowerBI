@@ -2,20 +2,23 @@ import React from "react";
 import { FaSearch, FaBell, FaEnvelope } from "react-icons/fa";
 import "./Navbar.css";
 
-function Navbar() {
+function Navbar({ sidebarOpen }) {
   return (
-    <div className="navbar">
-      <h2>Dashboard Overview</h2>
-      <div className="search-bar">
+    <div className="navbar" style={{ marginLeft: sidebarOpen ? "260px" : "80px" }}>
+      <div></div>
+      <div className="search-bar" style={{ width: "450px" }}>
         <FaSearch />
-        <input type="text" placeholder="Search reports, workspaces..." />
+        <input 
+          type="text" 
+          placeholder="Search reports, workspaces, or datasets..." 
+        />
       </div>
       <div className="user-info">
-        <FaBell style={{ fontSize: "20px", color: "#64748b" }} />
-        <FaEnvelope style={{ fontSize: "20px", color: "#64748b" }} />
-        <span>Abeera Nadeem</span>
+        <FaBell style={{ fontSize: "20px", color: "white" }} />
+        <FaEnvelope style={{ fontSize: "20px", color: "white" }} />
+        <span>User Name</span>
         <img 
-          src="https://ui-avatars.com/api/?background=667eea&color=fff&name=Abeera+Nadeem" 
+          src="https://ui-avatars.com/api/?background=ffffff&color=667eea&name=User+Name" 
           alt="Profile" 
           className="profile-img"
         />

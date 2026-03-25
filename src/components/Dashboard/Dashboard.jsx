@@ -6,7 +6,12 @@ import { FaPlus, FaChartLine, FaUsers, FaFileAlt } from "react-icons/fa";
 import "./Dashboard.css";
 
 function Dashboard() {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("home");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   const stats = [
     { title: "Total Reports", value: "24", icon: <FaFileAlt />, color: "#667eea" },
@@ -16,9 +21,14 @@ function Dashboard() {
 
   return (
     <div>
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <Navbar />
-      <div className="dashboard">
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        sidebarOpen={sidebarOpen}
+        toggleSidebar={toggleSidebar}
+      />
+      <Navbar sidebarOpen={sidebarOpen} />
+      <div className={`dashboard ${sidebarOpen ? "open" : "closed"}`}>
         <div className="dashboard-header">
           <h1>Welcome back, User! 👋</h1>
           <button className="new-report">
