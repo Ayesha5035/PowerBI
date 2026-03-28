@@ -14,14 +14,17 @@ function Navbar({ onMenuClick }) {
       </div>
       <div className="search-bar">
         <FaSearch />
-        <input type="text" placeholder="Search reports, workspaces..." />
+        <input 
+          type="text" 
+          placeholder="Search reports, workspaces, or datasets..." 
+        />
       </div>
       <div className="user-info">
-        <FaBell style={{ fontSize: "20px", color: "#64748b" }} />
-        <FaEnvelope style={{ fontSize: "20px", color: "#64748b" }} />
-        <span>Abeera Nadeem</span>
+        <FaBell style={{ fontSize: "20px", color: "white" }} />
+        <FaEnvelope style={{ fontSize: "20px", color: "white" }} />
+        <span>User Name</span>
         <img 
-          src="https://ui-avatars.com/api/?background=667eea&color=fff&name=Abeera+Nadeem" 
+          src="https://ui-avatars.com/api/?background=ffffff&color=667eea&name=User+Name" 
           alt="Profile" 
           className="profile-img"
         />

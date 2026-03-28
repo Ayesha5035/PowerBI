@@ -2,8 +2,8 @@
 
 .navbar {
   height: 70px;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -66,22 +66,25 @@
 .user-info {
   display: flex;
   align-items: center;
-  gap: 15px;
-  background: #f8fafc;
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.2);
   padding: 8px 20px;
-  border-radius: 50px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .user-info:hover {
-  background: #f1f5f9;
+  background: rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .user-info span {
+  color: white;
   font-weight: 500;
-  color: #1e293b;
 }
 
 .profile-img {
@@ -89,7 +92,7 @@
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #667eea;
+  border: 2px solid rgba(255, 255, 255, 0.8);
 }
 
 .search-bar {

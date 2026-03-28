@@ -2,6 +2,7 @@
 import React from "react";
 import { FaHome, FaPlus, FaChartBar, FaCog, FaFolder, FaStar, FaTimes } from "react-icons/fa";
 import "./Sidebar.css";
+import logo from "../../assets/logo.png";
 
 function Sidebar({ activeTab, setActiveTab, onNavigateToDataConnection, onNavigateToHome, isOpen, onClose }) {
   const menuItems = [
