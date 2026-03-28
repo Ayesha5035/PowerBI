@@ -1,3 +1,4 @@
+// src/components/Dashboard/Dashboard.jsx
 import React, { useState } from "react";
 import Sidebar from "../Sidebar/Sidebar";
 import Navbar from "../Navbar/Navbar";
@@ -5,8 +6,9 @@ import Card from "../Card/Card";
 import { FaPlus, FaChartLine, FaUsers, FaFileAlt } from "react-icons/fa";
 import "./Dashboard.css";
 
-function Dashboard() {
-  const [activeTab, setActiveTab] = useState("dashboard");
+function Dashboard({ onNavigateToDataConnection }) {
+  const [activeTab, setActiveTab] = useState("home");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const stats = [
     { title: "Total Reports", value: "24", icon: <FaFileAlt />, color: "#667eea" },
@@ -14,19 +16,43 @@ function Dashboard() {
     { title: "Data Sources", value: "12", icon: <FaChartLine />, color: "#ed8936" },
   ];
 
+  const handleNewReport = () => {
+    if (onNavigateToDataConnection) {
+      onNavigateToDataConnection();
+    }
+  };
+
+  const handleNavigateToHome = () => {
+    setActiveTab("home");
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+  };
+
   return (
     <div>
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <Navbar />
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab}
+        onNavigateToDataConnection={onNavigateToDataConnection}
+        onNavigateToHome={handleNavigateToHome}
+        isOpen={isSidebarOpen}
+        onClose={closeSidebar}
+      />
+      <Navbar onMenuClick={toggleSidebar} />
       <div className="dashboard">
         <div className="dashboard-header">
           <h1>Welcome back, User! 👋</h1>
-          <button className="new-report">
+          <button className="new-report" onClick={handleNewReport}>
             <FaPlus /> New Report
           </button>
         </div>
 
-        {/* Statistics Section */}
         <div className="stats-grid">
           {stats.map((stat, index) => (
             <div key={index} className="stat-card">
@@ -37,7 +63,6 @@ function Dashboard() {
           ))}
         </div>
 
-        {/* Reports Section */}
         <div className="section-title">
           <FaFileAlt />
           <span>My Workspaces</span>

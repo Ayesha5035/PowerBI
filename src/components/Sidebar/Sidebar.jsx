@@ -1,8 +1,9 @@
+// src/components/Sidebar/Sidebar.jsx
 import React from "react";
-import { FaHome, FaPlus, FaChartBar, FaCog, FaFolder, FaStar } from "react-icons/fa";
+import { FaHome, FaPlus, FaChartBar, FaCog, FaFolder, FaStar, FaTimes } from "react-icons/fa";
 import "./Sidebar.css";
 
-function Sidebar({ activeTab, setActiveTab }) {
+function Sidebar({ activeTab, setActiveTab, onNavigateToDataConnection, onNavigateToHome, isOpen, onClose }) {
   const menuItems = [
     { id: "home", icon: <FaHome />, label: "Home" },
     { id: "create", icon: <FaPlus />, label: "Create" },
@@ -12,22 +13,44 @@ function Sidebar({ activeTab, setActiveTab }) {
     { id: "settings", icon: <FaCog />, label: "Settings" },
   ];
 
+  const handleItemClick = (itemId) => {
+    if (itemId === "create" && onNavigateToDataConnection) {
+      onNavigateToDataConnection();
+    } else if (itemId === "home" && onNavigateToHome) {
+      onNavigateToHome();
+    } else {
+      setActiveTab(itemId);
+    }
+    // Close sidebar on mobile after click
+    if (onClose && window.innerWidth <= 1024) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="sidebar">
-      <div className="logo">Power BI Dashboard</div>
-      <ul>
-        {menuItems.map((item) => (
-          <li 
-            key={item.id}
-            className={activeTab === item.id ? "active" : ""}
-            onClick={() => setActiveTab(item.id)}
-          >
-            {item.icon}
-            <span>{item.label}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <>
+      {/* Overlay for mobile */}
+      {isOpen && <div className="sidebar-overlay" onClick={onClose}></div>}
+      
+      <div className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
+        <div className="sidebar-header">
+          <div className="logo">Power BI Dashboard</div>
+          
+        </div>
+        <ul>
+          {menuItems.map((item) => (
+            <li 
+              key={item.id}
+              className={activeTab === item.id ? "active" : ""}
+              onClick={() => handleItemClick(item.id)}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
   );
 }
 

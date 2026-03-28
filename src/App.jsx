@@ -1,11 +1,27 @@
-import { useState } from 'react'
-import './App.css'
-import Dashboard from "./components/Dashboard/Dashboard"; 
+// src/App.jsx
+import { useState } from 'react';
+import Dashboard from "./components/Dashboard/Dashboard";
+import DataConnectionPage from "./components/DataConnection/DataConnectionPage";
+import './App.css';
 
 function App() {
+  const [showDataConnection, setShowDataConnection] = useState(false);
+
+  const handleNavigateToDataConnection = () => {
+    setShowDataConnection(true);
+  };
+
+  const handleBackToDashboard = () => {
+    setShowDataConnection(false);
+  };
+
   return (
     <div>
-      <Dashboard />
+      {!showDataConnection ? (
+        <Dashboard onNavigateToDataConnection={handleNavigateToDataConnection} />
+      ) : (
+        <DataConnectionPage onBackToDashboard={handleBackToDashboard} />
+      )}
     </div>
   );
 }

@@ -1,11 +1,17 @@
+// src/components/Navbar/Navbar.jsx
 import React from "react";
-import { FaSearch, FaBell, FaEnvelope } from "react-icons/fa";
+import { FaSearch, FaBell, FaEnvelope, FaBars } from "react-icons/fa";
 import "./Navbar.css";
 
-function Navbar() {
+function Navbar({ onMenuClick }) {
   return (
     <div className="navbar">
-      <h2>Dashboard Overview</h2>
+      <div className="navbar-left">
+        <button className="menu-button" onClick={onMenuClick}>
+          <FaBars />
+        </button>
+        <h2>Dashboard Overview</h2>
+      </div>
       <div className="search-bar">
         <FaSearch />
         <input type="text" placeholder="Search reports, workspaces..." />
