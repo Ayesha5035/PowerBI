@@ -7,20 +7,12 @@ import './App.css';
 function App() {
   const [showDataConnection, setShowDataConnection] = useState(false);
 
-  const handleNavigateToDataConnection = () => {
-    setShowDataConnection(true);
-  };
-
-  const handleBackToDashboard = () => {
-    setShowDataConnection(false);
-  };
-
   return (
     <div>
       {!showDataConnection ? (
-        <Dashboard onNavigateToDataConnection={handleNavigateToDataConnection} />
+        <Dashboard onNavigateToDataConnection={() => setShowDataConnection(true)} />
       ) : (
-        <DataConnectionPage onBackToDashboard={handleBackToDashboard} />
+        <DataConnectionPage onBackToDashboard={() => setShowDataConnection(false)} />
       )}
     </div>
   );

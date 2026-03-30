@@ -8,7 +8,11 @@ import "./Dashboard.css";
 
 function Dashboard({ onNavigateToDataConnection }) {
   const [activeTab, setActiveTab] = useState("home");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   const stats = [
     { title: "Total Reports", value: "24", icon: <FaFileAlt />, color: "#667eea" },
@@ -26,26 +30,18 @@ function Dashboard({ onNavigateToDataConnection }) {
     setActiveTab("home");
   };
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const closeSidebar = () => {
-    setIsSidebarOpen(false);
-  };
-
   return (
     <div>
       <Sidebar 
         activeTab={activeTab} 
-        setActiveTab={setActiveTab}
+        setActiveTab={setActiveTab} 
+        sidebarOpen={sidebarOpen}
+        toggleSidebar={toggleSidebar}
         onNavigateToDataConnection={onNavigateToDataConnection}
         onNavigateToHome={handleNavigateToHome}
-        isOpen={isSidebarOpen}
-        onClose={closeSidebar}
       />
-      <Navbar onMenuClick={toggleSidebar} />
-      <div className="dashboard">
+      <Navbar sidebarOpen={sidebarOpen} />
+      <div className={`dashboard ${sidebarOpen ? "open" : "closed"}`}>
         <div className="dashboard-header">
           <h1>Welcome back, User! 👋</h1>
           <button className="new-report" onClick={handleNewReport}>
