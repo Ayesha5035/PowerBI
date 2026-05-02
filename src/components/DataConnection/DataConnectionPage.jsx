@@ -2,26 +2,126 @@
 import React, { useState } from "react";
 import Sidebar from "../Sidebar/Sidebar";
 import Navbar from "../Navbar/Navbar";
+import ExcelUploader from "./ExcelUploader";
+import DataPreview from "./DataPreview";
+import SQLServerConnector from "./SQLServerConnector";
+import ManualEntry from "./ManualEntry";
 import { 
-  FiDatabase, FiCloud, FiFileText, FiFile, FiClipboard, FiBookOpen, FiFolder, FiBook, FiArrowLeft
+  FiDatabase, FiCloud, FiFileText, FiFile, FiClipboard, 
+  FiBookOpen, FiFolder, FiBook, FiArrowLeft
 } from 'react-icons/fi';
 import "./DataConnectionPage.css";
 
 const DataConnectionPage = ({ onBackToDashboard }) => {
   const [activeTab, setActiveTab] = useState("create");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+  // State for uploaded data preview
+  const [uploadedData, setUploadedData] = useState(null);
+  const [uploadedFileName, setUploadedFileName] = useState(null);
+  
+  // State for modals and edit functionality
+  const [showSQLModal, setShowSQLModal] = useState(false);
+  const [showManualModal, setShowManualModal] = useState(false);
+  
+  // State for editing existing data
+  const [editingData, setEditingData] = useState(null);
+  const [editingFileName, setEditingFileName] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  // Callback when Excel/CSV upload is successful
+  const handleFileUpload = (parsedData, fileName) => {
+    console.log(`✅ File uploaded: ${fileName}`);
+    console.log(`📊 Data rows: ${parsedData.length}`);
+    console.log(`📋 Column headers:`, Object.keys(parsedData[0] || {}));
+    
+    setUploadedData(parsedData);
+    setUploadedFileName(fileName);
+    
+    alert(`Successfully uploaded "${fileName}" with ${parsedData.length} rows of data!`);
+  };
+  
+  // Callback when SQL Server data is imported
+  const handleSQLImport = (data, sourceName) => {
+    console.log(`✅ SQL Data imported: ${sourceName}`);
+    console.log(`📊 Data rows: ${data.length}`);
+    
+    setUploadedData(data);
+    setUploadedFileName(sourceName);
+    
+    alert(`Successfully imported ${data.length} rows from SQL Server!`);
+  };
+  
+  // Callback when Manual Entry data is saved
+  const handleManualSave = (data, fileName) => {
+    console.log(`✅ Manual data saved: ${fileName}`);
+    console.log(`📊 Data rows: ${data.length}`);
+    
+    setUploadedData(data);
+    setUploadedFileName(fileName);
+    
+    alert(`Successfully saved ${data.length} rows of manual data!`);
+  };
+  
+  // Handle save to database
+  const handleSaveToDatabase = async (data, fileName) => {
+    console.log('💾 Saving to database:', { fileName, rowCount: data.length });
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    alert(`Data from "${fileName}" saved to database successfully!`);
+  };
+  
+  // Handle discard
+  const handleDiscardData = () => {
+    setUploadedData(null);
+    setUploadedFileName(null);
+  };
+  
+  // Handle edit data - opens ManualEntry with existing data
+  const handleEditData = () => {
+    setEditingData(uploadedData);
+    setEditingFileName(uploadedFileName);
+    setShowEditModal(true);
+    setUploadedData(null);
+    setUploadedFileName(null);
+  };
+
+  const handleCardClick = (sourceId) => {
+    console.log('🖱️ Card clicked:', sourceId);
+    if (sourceId === 'sqlserver') {
+      setShowSQLModal(true);
+    } else if (sourceId === 'paste') {
+       console.log('📝 Opening Manual Entry modal'); 
+      setShowManualModal(true);
+    } else {
+      alert(`Connect to ${sourceId}`);
+    }
+  };
+
   const dataSources = [
-    { id: 'getdata', name: 'Get Data', icon: <FiDatabase size={28} />, description: 'Connect to various data sources', color: '#01b8aa', isPrimary: true },
-    { id: 'onelake', name: 'OneLake catalog', icon: <FiCloud size={28} />, description: 'Browse OneLake data', color: '#5e5ce6' },
-    { id: 'excel', name: 'Excel', icon: <FiFileText size={28} />, description: 'Upload Excel file', color: '#1e6f3f' },
-    { id: 'csv', name: 'CSV', icon: <FiFile size={28} />, description: 'Upload CSV file', color: '#f39c12' },
+    { id: 'sqlserver', name: 'SQL Server', icon: <FiDatabase size={28} />, description: 'Connect to SQL server data sources', color: '#01b8aa', isPrimary: true },
     { id: 'paste', name: 'Paste or manually enter data', icon: <FiClipboard size={28} />, description: 'Copy and paste data', color: '#9b59b6' },
-    { id: 'semantic', name: 'Pick a published semantic model', icon: <FiBookOpen size={28} />, description: 'Use existing model', color: '#0078d4' }
+    { 
+      id: 'excel', 
+      name: 'Excel', 
+      icon: <FiFileText size={28} />, 
+      description: 'Upload Excel file', 
+      color: '#1e6f3f',
+      isUploader: true,
+      acceptedFormats: '.xlsx,.xls'
+    },
+    { 
+      id: 'csv', 
+      name: 'CSV', 
+      icon: <FiFile size={28} />, 
+      description: 'Upload CSV file', 
+      color: '#f39c12',
+      isUploader: true,
+      acceptedFormats: '.csv'
+    },
   ];
 
   const otherItems = [
@@ -33,6 +133,37 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
     if (onBackToDashboard) {
       onBackToDashboard();
     }
+  };
+
+  const renderDataSourceCard = (source) => {
+    const cardContent = (
+      <div className="datasource-card" style={{ cursor: 'pointer' }}>
+        <div className="datasource-icon" style={{ color: source.color }}>{source.icon}</div>
+        <div className="datasource-info">
+          <h3 className="datasource-name">{source.name}</h3>
+          <p className="datasource-desc">{source.description}</p>
+        </div>
+      </div>
+    );
+
+    if (source.isUploader) {
+      return (
+        <ExcelUploader 
+          key={source.id}
+          onUploadSuccess={handleFileUpload}
+          acceptedFormats={source.acceptedFormats}
+        >
+          {cardContent}
+        </ExcelUploader>
+      );
+    }
+     console.log('Rendering card for:', source.id, source.name);
+    // Fixed: Added explicit cursor pointer and ensured onClick works
+    return (
+      <div key={source.id} onClick={() => handleCardClick(source.id)} style={{ cursor: 'pointer' }}>
+        {cardContent}
+      </div>
+    );
   };
 
   return (
@@ -55,39 +186,48 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
           <h1 className="dataconnection-title">Add data to start building a report</h1>
 
           <div className="datasources-grid">
-            {dataSources.map(source => (
-              <div key={source.id} className={`datasource-card ${source.isPrimary ? 'primary' : ''}`} onClick={() => alert(`Connect to ${source.name}`)}>
-                <div className="datasource-icon" style={{ color: source.color }}>{source.icon}</div>
-                <div className="datasource-info">
-                  <h3 className="datasource-name">{source.name}</h3>
-                  <p className="datasource-desc">{source.description}</p>
-                </div>
-              </div>
-            ))}
+            {dataSources.map(source => renderDataSourceCard(source))}
           </div>
 
-          <div className="info-section">
-            <p className="info-text">💡 Don't see the source you're looking for? <a href="#">Download the desktop app</a></p>
-            <p className="info-text old-experience">Looking for the old experience? <a href="#">Excel</a> or <a href="#">CSV</a>. These old experiences will be deprecated soon. <a href="#">Learn more</a></p>
-          </div>
-
-          <div className="other-items-section">
-            <h2 className="other-items-title">Other items you can create with Microsoft Fabric</h2>
-            <p className="workspace-info">Current workspace: <strong>My workspace</strong> <a href="#" className="change-link">(Change)</a><br />Items will be saved to this workspace.</p>
-            <div className="items-grid">
-              {otherItems.map(item => (
-                <div key={item.id} className="item-card" onClick={() => alert(`Create ${item.name}`)}>
-                  <div className="item-icon" style={{ color: '#01b8aa' }}>{item.icon}</div>
-                  <div className="item-content">
-                    <h3 className="item-name">{item.name}</h3>
-                    <p className="item-desc">{item.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+         
+          {/* Data Preview Component */}
+          {uploadedData && (
+            <DataPreview 
+              data={uploadedData}
+              fileName={uploadedFileName}
+              onSave={handleSaveToDatabase}
+              onDiscard={handleDiscardData}
+              onEdit={handleEditData}
+            />
+          )}
         </div>
       </div>
+      
+      {/* SQL Server Modal */}
+      {showSQLModal && (
+        <SQLServerConnector 
+          onConnect={handleSQLImport}
+          onClose={() => setShowSQLModal(false)}
+        />
+      )}
+      
+      {/* Manual Entry Modal (for creating new data) */}
+      {showManualModal && (
+        <ManualEntry 
+          onSave={handleManualSave}
+          onClose={() => setShowManualModal(false)}
+        />
+      )}
+      
+      {/* Edit Modal (for editing existing data) */}
+      {showEditModal && (
+        <ManualEntry 
+          onSave={handleManualSave}
+          onClose={() => setShowEditModal(false)}
+          initialData={editingData}
+          initialFileName={editingFileName}
+        />
+      )}
     </div>
   );
 };
