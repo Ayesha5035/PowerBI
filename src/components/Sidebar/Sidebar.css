@@ -1,0 +1,199 @@
+/* src/components/Sidebar/Sidebar.css */
+.sidebar {
+  width: 260px;
+  height: 100vh;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  position: fixed;
+  left: 0;
+  top: 0;
+  color: white;
+  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+/* Closed sidebar - only icons visible */
+.sidebar.closed {
+  width: 80px;
+}
+
+/* Open sidebar - full width */
+.sidebar.open {
+  width: 260px;
+}
+
+.sidebar-header {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar.closed .sidebar-header {
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.menu-icon {
+  font-size: 24px;
+  cursor: pointer;
+  color: white;
+  transition: all 0.3s ease;
+  min-width: 24px;
+}
+
+.menu-icon:hover {
+  color: #667eea;
+  transform: scale(1.1);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.logo-text {
+  font-size: 22px;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+}
+
+.menu-divider {
+  height: 2px;
+  background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+  margin: 0 20px 15px 20px;
+  opacity: 0.6;
+}
+
+.sidebar.closed .menu-divider {
+  margin: 10px 15px 15px 15px;
+}
+
+/* Menu items - Open sidebar (horizontal layout) */
+.sidebar.open ul li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  margin: 8px 12px;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+/* Menu items - Closed sidebar (vertical layout with text below icon) */
+.sidebar.closed ul li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 8px;
+  margin: 8px 8px;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  color: #cbd5e1;
+  font-weight: 500;
+  text-align: center;
+}
+
+.sidebar ul li:hover {
+  background: rgba(102, 126, 234, 0.2);
+  color: white;
+}
+
+.sidebar.open ul li:hover {
+  transform: translateX(5px);
+}
+
+.sidebar.closed ul li:hover {
+  transform: translateY(-2px);
+}
+
+/* Icon size */
+.sidebar ul li svg {
+  font-size: 22px;
+  min-width: 24px;
+}
+
+.sidebar.closed ul li svg {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+/* Text styling */
+.sidebar.open ul li span {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.sidebar.closed ul li .menu-label-closed {
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.sidebar ul li.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* ========== RESPONSIVE - MOBILE BEHAVIOR ========== */
+/* On tablet and mobile, sidebar starts collapsed (icons only) */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 80px;
+  }
+  
+  .sidebar.open {
+    width: 260px;
+  }
+  
+  .sidebar.closed {
+    width: 80px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 70px;
+  }
+  
+  .sidebar.open {
+    width: 240px;
+  }
+  
+  .sidebar.closed {
+    width: 70px;
+  }
+  
+  .sidebar.closed ul li .menu-label-closed {
+    font-size: 10px;
+  }
+  
+  .sidebar.closed ul li svg {
+    font-size: 20px;
+  }
+}
+
+/* Overlay for mobile when sidebar is open */
+@media (max-width: 1024px) {
+  .sidebar.open::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 260px;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+  }
+}
