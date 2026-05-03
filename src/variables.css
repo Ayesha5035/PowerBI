@@ -1,0 +1,232 @@
+/* ============================================================
+   variables.css — MASTER DESIGN SYSTEM
+   PowerBI Clone | Final Year Project
+   
+   HOW TO USE:
+   1. Import this file ONCE in your main index.css or App.css:
+      @import './variables.css';
+   2. Then use variables anywhere like:
+      color: var(--color-accent);
+      padding: var(--space-md);
+   
+   TO CHANGE ANYTHING SITE-WIDE → just edit this file only!
+   ============================================================ */
+
+
+/* ============================================================
+   1. COLORS
+   ============================================================ */
+:root {
+
+  /* --- Navigation --- */
+  --color-navbar:           #1E2A3A;   /* Top navbar background */
+  --color-sidebar:          #1E2A3A;   /* Left sidebar background */
+  --color-sidebar-hover:    #1E2A3A;   /* Sidebar item hover */
+  --color-sidebar-active:   #4A90D9;   /* Active sidebar item */
+
+  /* --- Page & Surfaces --- */
+  --color-page-bg:          #F4F6F9;   /* Main page background */
+  --color-card-bg:          #FFFFFF;   /* Cards, panels, modals */
+  --color-card-bg-alt:      #F8FAFC;   /* Alternate card / table header */
+
+  /* --- Accent / Brand --- */
+  --color-accent:           #4A90D9;   /* Buttons, links, active states */
+  --color-accent-hover:     #3A7BC8;   /* Accent on hover */
+  --color-accent-light:     #EBF4FF;   /* Accent background tint */
+  --color-accent-gradient:  linear-gradient(135deg, #4A90D9 0%, #2C5F9E 100%);
+
+  /* --- Text --- */
+  --color-text-primary:     #1E2A3A;   /* Headings, important text */
+  --color-text-secondary:   #4A5568;   /* Body text, paragraphs */
+  --color-text-muted:       #8A9BB0;   /* Labels, hints, placeholders */
+  --color-text-on-dark:     #FFFFFF;   /* Text on dark navbar/sidebar */
+  --color-text-on-accent:   #FFFFFF;   /* Text on accent/blue buttons */
+
+  /* --- Borders --- */
+  --color-border:           #E2E8F0;   /* Default border */
+  --color-border-strong:    #CBD5E0;   /* Emphasized border */
+  --color-border-light:     #F1F5F9;   /* Subtle dividers */
+
+  /* --- Status Colors --- */
+  --color-success:          #38A169;   /* Green — success states */
+  --color-success-light:    #F0FFF4;
+  --color-warning:          #D69E2E;   /* Amber — warnings */
+  --color-warning-light:    #FFFBEB;
+  --color-danger:           #E53E3E;   /* Red — errors */
+  --color-danger-light:     #FFF5F5;
+  --color-info:             #3182CE;   /* Blue — info */
+  --color-info-light:       #EBF8FF;
+
+  /* --- Chart Colors (for your graphs/charts) --- */
+  --chart-1:  #4A90D9;   /* Blue */
+  --chart-2:  #38A169;   /* Green */
+  --chart-3:  #D69E2E;   /* Amber */
+  --chart-4:  #E53E3E;   /* Red */
+  --chart-5:  #805AD5;   /* Purple */
+  --chart-6:  #DD6B20;   /* Orange */
+}
+
+
+/* ============================================================
+   2. TYPOGRAPHY — Font Sizes
+   ============================================================ */
+:root {
+
+  /* --- Font Family --- */
+  --font-primary:   'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:      'Courier New', Courier, monospace;
+
+  /* --- Font Sizes --- */
+  --text-xs:    11px;   /* Tiny labels, badges */
+  --text-sm:    12px;   /* Small labels, hints */
+  --text-base:  13px;   /* Table cells, small body */
+  --text-md:    14px;   /* Body text, descriptions */
+  --text-lg:    16px;   /* Card titles, nav items */
+  --text-xl:    18px;   /* Section headings */
+  --text-2xl:   22px;   /* Page sub-headings */
+  --text-3xl:   28px;   /* Page main headings */
+  --text-4xl:   36px;   /* Stat numbers on dashboard */
+
+  /* --- Font Weights --- */
+  --font-normal:   400;
+  --font-medium:   500;
+  --font-semibold: 600;
+  --font-bold:     700;
+
+  /* --- Line Heights --- */
+  --leading-tight:  1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+}
+
+
+/* ============================================================
+   3. SPACING — Padding & Margin
+   ============================================================ */
+:root {
+
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+
+  /* --- Semantic Aliases (easier to remember) --- */
+  --space-xs:   var(--space-1);    /* 4px  — tiny gaps */
+  --space-sm:   var(--space-2);    /* 8px  — small gaps */
+  --space-md:   var(--space-4);    /* 16px — standard padding */
+  --space-lg:   var(--space-6);    /* 24px — section padding */
+  --space-xl:   var(--space-8);    /* 32px — large section gaps */
+  --space-2xl:  var(--space-12);   /* 48px — page-level spacing */
+
+  /* --- Component-specific --- */
+  --padding-card:       var(--space-6);    /* 24px inside cards */
+  --padding-page:       30px;             /* Page outer padding */
+  --padding-navbar:     0 30px;           /* Navbar horizontal padding */
+  --navbar-height:      70px;             /* Fixed navbar height */
+  --sidebar-width-open: 260px;            /* Sidebar when expanded */
+  --sidebar-width-closed: 80px;           /* Sidebar when collapsed */
+}
+
+
+/* ============================================================
+   4. BORDER RADIUS — Rounded Corners
+   ============================================================ */
+:root {
+
+  --radius-sm:    6px;    /* Small elements — badges, chips */
+  --radius-md:    8px;    /* Inputs, small buttons */
+  --radius-lg:    12px;   /* Cards, dropdowns */
+  --radius-xl:    16px;   /* Large cards, modals */
+  --radius-2xl:   24px;   /* Pill-shaped buttons */
+  --radius-full:  9999px; /* Fully round — avatars, toggles */
+}
+
+
+/* ============================================================
+   5. BOX SHADOWS
+   ============================================================ */
+:root {
+
+  --shadow-xs:   0 1px 2px rgba(0, 0, 0, 0.04);                          /* Barely visible */
+  --shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.08);                          /* Card resting */
+  --shadow-md:   0 4px 12px rgba(0, 0, 0, 0.08);                         /* Card hover */
+  --shadow-lg:   0 8px 24px rgba(0, 0, 0, 0.10);                         /* Dropdowns, popups */
+  --shadow-xl:   0 16px 40px rgba(0, 0, 0, 0.12);                        /* Modals */
+  --shadow-accent: 0 4px 14px rgba(74, 144, 217, 0.35);                  /* Accent button glow */
+  --shadow-navbar: 0 2px 10px rgba(0, 0, 0, 0.15);                       /* Navbar shadow */
+}
+
+
+/* ============================================================
+   6. TRANSITIONS — Animations
+   ============================================================ */
+:root {
+
+  --transition-fast:   all 0.15s ease;
+  --transition-base:   all 0.2s ease;
+  --transition-slow:   all 0.3s ease;
+  --transition-sidebar: margin-left 0.3s ease;
+}
+
+
+/* ============================================================
+   7. Z-INDEX — Layering
+   ============================================================ */
+:root {
+
+  --z-base:     1;
+  --z-dropdown: 100;
+  --z-sidebar:  200;
+  --z-navbar:   999;
+  --z-modal:    1000;
+  --z-toast:    1100;
+}
+
+
+/* ============================================================
+   8. GLOBAL BASE STYLES
+   Apply to the whole website automatically
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: var(--font-normal);
+  color: var(--color-text-secondary);
+  background-color: var(--color-page-bg);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1 { font-size: var(--text-3xl); font-weight: var(--font-bold);    color: var(--color-text-primary); }
+h2 { font-size: var(--text-2xl); font-weight: var(--font-semibold); color: var(--color-text-primary); }
+h3 { font-size: var(--text-xl);  font-weight: var(--font-semibold); color: var(--color-text-primary); }
+h4 { font-size: var(--text-lg);  font-weight: var(--font-medium);   color: var(--color-text-primary); }
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: var(--transition-base);
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+}
+
+button {
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: var(--transition-base);
+}

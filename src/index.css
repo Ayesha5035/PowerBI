@@ -1,10 +1,13 @@
+/* src/index.css */
+@import './variables.css';
+
 :root {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  font-family: var(--font-primary);
+  line-height: var(--leading-normal);
+  font-weight: var(--font-normal);
   color-scheme: light dark;
-  color: #1e293b;
-  background-color: #f8fafc;
+  color: var(--color-text-primary);
+  background-color: var(--color-page-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -21,23 +24,23 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-page-bg);
 }
 
 button {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: none;
   padding: 0.6em 1.2em;
   font-size: 1em;
-  font-weight: 500;
+  font-weight: var(--font-medium);
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition-slow);
 }
 
 button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 button:active {

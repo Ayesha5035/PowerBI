@@ -1,8 +1,8 @@
 /* src/components/DataConnection/ManualEntry.css */
+@import '../../variables.css';
 
-/* ========== CORE MODAL STYLES (ADD THESE FIRST) ========== */
+/* ========== CORE MODAL STYLES ========== */
 
-/* Modal Overlay - dims background and centers modal */
 .manual-modal-overlay {
   position: fixed;
   top: 0;
@@ -13,25 +13,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: var(--z-modal);
   backdrop-filter: blur(4px);
   animation: fadeIn 0.2s ease;
 }
 
 @keyframes fadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
-/* Modal Container - the white box that appears */
 .manual-modal {
-  background: white;
-  border-radius: 24px;
+  background: var(--color-card-bg);
+  border-radius: var(--radius-2xl);
   width: 90%;
   max-width: 1000px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-xl);
   animation: slideUp 0.3s ease;
 }
 
@@ -51,19 +50,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e2e8f0;
-  background: #f8fafc;
-  border-radius: 24px 24px 0 0;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-card-bg-alt);
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
 }
 
 .manual-modal-header h2 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1e293b;
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2);
   margin: 0;
 }
 
@@ -72,149 +71,148 @@
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #94a3b8;
-  transition: all 0.2s;
+  color: var(--color-text-muted);
+  transition: var(--transition-base);
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .close-modal:hover {
-  background: #e2e8f0;
-  color: #dc2626;
+  background: var(--color-border);
+  color: var(--color-danger);
 }
 
 /* Modal Body */
 .manual-modal-body {
-  padding: 24px;
+  padding: var(--space-6);
 }
 
 /* Modal Footer */
 .manual-modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  padding: 20px 24px;
-  border-top: 1px solid #e2e8f0;
-  background: #f8fafc;
-  border-radius: 0 0 24px 24px;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-card-bg-alt);
+  border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
 }
 
 .cancel-btn {
-  padding: 10px 24px;
-  background: #e2e8f0;
-  color: #475569;
+  padding: var(--space-2) var(--space-6);
+  background: var(--color-border);
+  color: var(--color-text-secondary);
   border: none;
-  border-radius: 10px;
-  font-weight: 500;
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-medium);
+  font-size: var(--text-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-base);
 }
 
 .cancel-btn:hover {
-  background: #cbd5e1;
+  background: var(--color-border-strong);
 }
 
 .connect-btn {
-  padding: 10px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  padding: var(--space-2) var(--space-6);
+  background: var(--color-accent-gradient);
+  color: var(--color-text-on-accent);
   border: none;
-  border-radius: 10px;
-  font-weight: 500;
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-medium);
+  font-size: var(--text-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-base);
 }
 
 .connect-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: var(--shadow-accent);
 }
 
-/* ========== YOUR EXISTING STYLES GO BELOW ========== */
+/* ========== FILE NAME SECTION ========== */
 
-/* File Name Section */
 .filename-section {
-  margin-bottom: 20px;
-  padding: 12px 16px;
-  background: #f8fafc;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-card-bg-alt);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
 }
 
-/* ... rest of your existing styles ... */
 .filename-section label {
   display: block;
-  font-size: 13px;
-  font-weight: 500;
-  color: #1e293b;
-  margin-bottom: 8px;
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
 }
 
 .filename-input-group {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-sm);
 }
 
 .filename-input {
   flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  font-size: 14px;
-  background: white;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font-size: var(--text-md);
+  background: var(--color-card-bg);
 }
 
 .filename-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-light);
 }
 
 .file-extension {
-  font-size: 13px;
-  color: #64748b;
-  font-weight: 500;
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  font-weight: var(--font-medium);
 }
 
 .form-hint {
-  font-size: 11px;
-  color: #94a3b8;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
 }
 
-/* Toolbar */
+/* ========== TOOLBAR ========== */
+
 .toolbar {
   display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #e2e8f0;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .toolbar-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 13px;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-3);
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   cursor: pointer;
-  transition: all 0.2s ease;
-  color: #475569;
+  transition: var(--transition-base);
+  color: var(--color-text-secondary);
 }
 
 .toolbar-btn:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: var(--color-card-bg-alt);
+  border-color: var(--color-border-strong);
   transform: translateY(-1px);
 }
 
@@ -223,164 +221,179 @@
   cursor: not-allowed;
 }
 
-/* Column Builder */
+/* ========== COLUMN BUILDER ========== */
+
 .column-builder {
-  background: #f8fafc;
-  padding: 16px;
-  border-radius: 12px;
-  margin-bottom: 24px;
+  background: var(--color-card-bg-alt);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
 }
 
 .column-builder h3 {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: #1e293b;
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--space-3);
+  color: var(--color-text-primary);
 }
 
 .column-input-group {
   display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
   flex-wrap: wrap;
 }
 
 .column-input {
   flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  font-size: 13px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
 }
 
 .add-column-btn {
-  padding: 8px 16px;
-  background: #667eea;
-  color: white;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--text-base);
+  transition: var(--transition-base);
+}
+
+.add-column-btn:hover {
+  background: var(--color-accent-hover);
 }
 
 .columns-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .column-tag {
-  background: white;
+  background: var(--color-card-bg);
   padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
+  border-radius: var(--radius-2xl);
+  font-size: var(--text-sm);
   display: flex;
   align-items: center;
-  gap: 8px;
-  border: 1px solid #e2e8f0;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border);
 }
 
 .remove-column {
   background: none;
   border: none;
-  color: #dc2626;
+  color: var(--color-danger);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--text-md);
 }
 
-/* Data Entry Table */
+/* ========== DATA ENTRY TABLE ========== */
+
 .data-entry-section {
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
   overflow-x: auto;
 }
 
 .data-entry-table {
   width: 100%;
   border-collapse: collapse;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-base);
 }
 
 .data-entry-table th {
-  background: #f8fafc;
-  padding: 10px 12px;
+  background: var(--color-card-bg-alt);
+  padding: var(--space-2) var(--space-3);
   text-align: left;
-  font-weight: 600;
-  border-bottom: 1px solid #e2e8f0;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .data-entry-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid #f1f5f9;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .data-entry-table input {
   width: 100%;
-  padding: 6px 8px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: var(--space-sm) var(--space-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-base);
 }
 
 .data-entry-table input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--color-accent);
 }
 
 .row-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .delete-row-btn {
   background: none;
   border: none;
-  color: #dc2626;
+  color: var(--color-danger);
   cursor: pointer;
-  font-size: 16px;
+  font-size: var(--text-lg);
 }
 
 .add-row-btn {
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 13px;
+  background: var(--color-card-bg-alt);
+  border: 1px solid var(--color-border);
+  padding: var(--space-sm) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-sm);
+  transition: var(--transition-base);
 }
 
-/* Info Note */
+.add-row-btn:hover {
+  background: var(--color-border);
+}
+
+/* ========== INFO NOTE ========== */
+
 .info-note {
-  margin-top: 16px;
-  padding: 10px 14px;
-  background: #fefce8;
-  border-radius: 8px;
-  font-size: 12px;
-  color: #854d0e;
-  border-left: 3px solid #eab308;
+  margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-warning-light);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-warning);
+  border-left: 3px solid var(--color-warning);
 }
 
 .info-note kbd {
-  background: #f1f5f9;
+  background: var(--color-card-bg-alt);
   padding: 2px 6px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 11px;
-  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  border: 1px solid var(--color-border-strong);
 }
-/* ========== PASTE AREA STYLES ========== */
+
+/* ========== PASTE AREA ========== */
 
 .paste-area {
-  background: #f8fafc;
-  border: 2px dashed #cbd5e1;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 20px;
+  background: var(--color-card-bg-alt);
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
   animation: slideDown 0.3s ease;
 }
 
@@ -399,10 +412,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #1e293b;
+  margin-bottom: var(--space-3);
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
 }
 
 .close-paste {
@@ -410,122 +423,121 @@
   border: none;
   font-size: 20px;
   cursor: pointer;
-  color: #94a3b8;
+  color: var(--color-text-muted);
   padding: 0 4px;
-  transition: color 0.2s;
+  transition: var(--transition-base);
 }
 
 .close-paste:hover {
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 .paste-textarea {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  font-size: 13px;
-  font-family: 'Monaco', 'Menlo', 'Cascadia Code', monospace;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  font-family: var(--font-mono);
   resize: vertical;
-  background: white;
+  background: var(--color-card-bg);
 }
 
 .paste-textarea:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-light);
 }
 
 .paste-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 12px;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
 }
 
 .paste-cancel-btn {
-  padding: 6px 16px;
-  background: #e2e8f0;
-  color: #475569;
+  padding: var(--space-sm) var(--space-4);
+  background: var(--color-border);
+  color: var(--color-text-secondary);
   border: none;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-base);
 }
 
 .paste-cancel-btn:hover {
-  background: #cbd5e1;
+  background: var(--color-border-strong);
 }
 
 .paste-import-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-4);
+  background: var(--color-accent-gradient);
+  color: var(--color-text-on-accent);
   border: none;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-base);
 }
 
 .paste-import-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: var(--shadow-accent);
 }
 
 .paste-tips {
-  margin-top: 12px;
-  padding: 8px 12px;
-  background: #fefce8;
-  border-radius: 8px;
-  font-size: 12px;
-  color: #854d0e;
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-warning-light);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-warning);
 }
 
-/* Responsive for paste area */
+/* ========== RESPONSIVE ========== */
+
 @media (max-width: 768px) {
   .paste-actions {
     flex-direction: column;
   }
-  
+
   .paste-cancel-btn,
   .paste-import-btn {
     width: 100%;
     justify-content: center;
   }
-}
-/* Responsive */
-@media (max-width: 768px) {
+
   .manual-modal {
     width: 95%;
     max-height: 95vh;
   }
-  
+
   .manual-modal-header h2 {
-    font-size: 18px;
+    font-size: var(--text-lg);
   }
-  
+
   .manual-modal-body {
-    padding: 16px;
+    padding: var(--space-4);
   }
-  
+
   .data-entry-table {
-    font-size: 11px;
+    font-size: var(--text-xs);
   }
-  
+
   .data-entry-table th,
   .data-entry-table td {
-    padding: 6px 8px;
+    padding: var(--space-sm) var(--space-2);
   }
-  
+
   .column-input-group {
     flex-direction: column;
   }
-  
+
   .toolbar {
     flex-wrap: wrap;
   }

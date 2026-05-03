@@ -1,42 +1,44 @@
 /* src/components/Navbar/Navbar.css */
+@import '../../variables.css';
+
 .navbar {
-  height: 70px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  height: var(--navbar-height);
+  background: var(--color-navbar);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 30px;
-  transition: margin-left 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: var(--padding-navbar);
+  transition: var(--transition-sidebar);
+  box-shadow: var(--shadow-navbar);
   position: fixed;
   top: 0;
   right: 0;
   left: 0;
-  z-index: 999;
+  z-index: var(--z-navbar);
 }
 
 .search-bar {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 12px 24px;
-  border-radius: 12px;
-  gap: 12px;
-  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-lg);
+  gap: var(--space-3);
+  transition: var(--transition-slow);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   width: 450px;
 }
 
 .search-bar:focus-within {
-  background: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .search-bar svg {
-  color: white;
+  color: var(--color-text-on-dark);
   font-size: 18px;
 }
 
@@ -44,44 +46,45 @@
   border: none;
   background: transparent;
   outline: none;
-  font-size: 15px;
-  color: white;
+  font-size: var(--text-md);
+  color: var(--color-text-on-dark);
   width: 100%;
+  font-family: var(--font-primary);
 }
 
 .search-bar input::placeholder {
-  color: rgba(255, 255, 255, 0.8);
-  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: var(--font-normal);
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 20px;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 8px 20px;
-  border-radius: 12px;
+  gap: var(--space-5);
+  background: rgba(255, 255, 255, 0.1);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition-slow);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .user-info:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.18);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
 .user-info span {
-  color: white;
-  font-weight: 500;
+  color: var(--color-text-on-dark);
+  font-weight: var(--font-medium);
 }
 
 .profile-img {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
   border: 2px solid rgba(255, 255, 255, 0.8);
 }
@@ -90,14 +93,14 @@
 @media (max-width: 1024px) {
   .navbar {
     margin-left: 0 !important;
-    padding: 0 20px;
+    padding: 0 var(--space-5);
   }
-  
+
   .search-bar {
     width: 300px;
-    padding: 10px 18px;
+    padding: var(--space-2) 18px;
   }
-  
+
   .user-name {
     display: none;
   }
@@ -106,23 +109,23 @@
 @media (max-width: 768px) {
   .navbar {
     height: 60px;
-    padding: 0 15px;
+    padding: 0 var(--space-4);
   }
-  
+
   .search-bar {
     width: 200px;
-    padding: 8px 14px;
+    padding: var(--space-2) var(--space-3);
   }
-  
+
   .search-bar input {
-    font-size: 13px;
+    font-size: var(--text-base);
   }
-  
+
   .user-info {
-    gap: 12px;
-    padding: 6px 14px;
+    gap: var(--space-3);
+    padding: var(--space-sm) var(--space-4);
   }
-  
+
   .profile-img {
     width: 32px;
     height: 32px;
@@ -133,9 +136,9 @@
   .search-bar {
     display: none;
   }
-  
+
   .user-info {
-    gap: 10px;
-    padding: 6px 12px;
+    gap: var(--space-2);
+    padding: var(--space-sm) var(--space-3);
   }
 }

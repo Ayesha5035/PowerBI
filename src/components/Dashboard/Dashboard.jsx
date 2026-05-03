@@ -1,24 +1,31 @@
 // src/components/Dashboard/Dashboard.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../Sidebar/Sidebar";
 import Navbar from "../Navbar/Navbar";
 import Card from "../Card/Card";
-import { FaPlus, FaChartLine, FaUsers, FaFileAlt } from "react-icons/fa";
+import { FaPlus, FaFileAlt, FaClock, FaFolderOpen, FaChartLine, FaHeart } from "react-icons/fa";
 import "./Dashboard.css";
 
 function Dashboard({ onNavigateToDataConnection }) {
   const [activeTab, setActiveTab] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [recentReports, setRecentReports] = useState([]);
+
+  // Load recent reports from localStorage when page loads
+  useEffect(() => {
+    loadRecentReports();
+  }, []);
+
+  const loadRecentReports = () => {
+    const savedReports = localStorage.getItem("recentReports");
+    if (savedReports) {
+      setRecentReports(JSON.parse(savedReports));
+    }
+  };
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
-
-  const stats = [
-    { title: "Total Reports", value: "24", icon: <FaFileAlt />, color: "#667eea" },
-    { title: "Active Users", value: "156", icon: <FaUsers />, color: "#48bb78" },
-    { title: "Data Sources", value: "12", icon: <FaChartLine />, color: "#ed8936" },
-  ];
 
   const handleNewReport = () => {
     if (onNavigateToDataConnection) {
@@ -28,6 +35,27 @@ function Dashboard({ onNavigateToDataConnection }) {
 
   const handleNavigateToHome = () => {
     setActiveTab("home");
+  };
+
+  // Card click handlers
+  const handleOpenWorkspace = () => {
+    alert("Opening My Workspace...");
+    // You can navigate to workspace page here
+  };
+
+  const handleOpenReportsHub = () => {
+    alert("Opening Reports Hub...");
+    // You can navigate to reports page here
+  };
+
+  const handleOpenFavourites = () => {
+    alert("Opening Favourites...");
+    // You can navigate to favourites page here
+  };
+
+  const handleOpenRecentReport = (report) => {
+    alert(`Opening: ${report.name}`);
+    // You can navigate to report viewer here
   };
 
   return (
@@ -41,49 +69,87 @@ function Dashboard({ onNavigateToDataConnection }) {
         onNavigateToHome={handleNavigateToHome}
       />
       <Navbar sidebarOpen={sidebarOpen} />
+      
       <div className={`dashboard ${sidebarOpen ? "open" : "closed"}`}>
+        {/* Header */}
         <div className="dashboard-header">
-          <h1>Welcome back, User! 👋</h1>
+          <div>
+            <h1>Welcome back, User! 👋</h1>
+          </div>
           <button className="new-report" onClick={handleNewReport}>
             <FaPlus /> New Report
           </button>
         </div>
 
-        <div className="stats-grid">
-          {stats.map((stat, index) => (
-            <div key={index} className="stat-card">
-              <div style={{ fontSize: "24px", color: stat.color }}>{stat.icon}</div>
-              <h3>{stat.title}</h3>
-              <div className="stat-value">{stat.value}</div>
-            </div>
-          ))}
-        </div>
-
+        {/* Workspaces Section */}
         <div className="section-title">
-          <FaFileAlt />
+          <FaFolderOpen />
           <span>My Workspaces</span>
         </div>
         <div className="cards">
           <Card 
-            title="My Workspace" 
-            description="Personal workspace for your daily analytics and reports" 
+            title="My Workspace"
             icon="📊"
+            description="Personal workspace for your daily analytics"
+            buttonText="Open Workspace"
+            onButtonClick={handleOpenWorkspace}
           />
           <Card 
-            title="FYP Project" 
-            description="Final Year Project - Data visualization and analysis" 
-            icon="🎓"
-          />
-          <Card 
-            title="Reports Hub" 
-            description="Central repository for all analytics reports" 
+            title="Reports Hub"
             icon="📈"
+            description="Central repository for all your reports"
+            buttonText="Open Reports"
+            onButtonClick={handleOpenReportsHub}
           />
           <Card 
-            title="Team Analytics" 
-            description="Collaborative workspace for team insights" 
-            icon="👥"
+            title="Favourites"
+            icon="❤️"
+            description="Your most used reports and dashboards"
+            buttonText="Open Favourites"
+            onButtonClick={handleOpenFavourites}
           />
+        </div>
+
+        {/* Recent Section */}
+        <div className="section-title">
+          <FaClock />
+          <span>Recent</span>
+        </div>
+        <div className="recent-section">
+          {recentReports.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📄</div>
+              <p>No recent reports yet</p>
+              <span>Create your first report by clicking "New Report"</span>
+            </div>
+          ) : (
+            <div className="recent-reports-grid">
+              {recentReports.slice(0, 5).map((report, index) => (
+                <div 
+                  key={index} 
+                  className="recent-report-card"
+                  onClick={() => handleOpenRecentReport(report)}
+                >
+                  <div className="recent-report-icon">
+                    {report.type === 'excel' && '📊'}
+                    {report.type === 'csv' && '📄'}
+                    {report.type === 'sql' && '🗄️'}
+                    {report.type === 'manual' && '✏️'}
+                    {!report.type && '📁'}
+                  </div>
+                  <div className="recent-report-info">
+                    <div className="recent-report-name">{report.name}</div>
+                    <div className="recent-report-meta">
+                      <span>{report.rows} rows</span>
+                      <span>•</span>
+                      <span>{new Date(report.date).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <button className="recent-report-open">Open →</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

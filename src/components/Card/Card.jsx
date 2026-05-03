@@ -1,3 +1,4 @@
+// src/components/Card/Card.jsx
 import React from "react";
 import "./Card.css";
 
@@ -6,7 +7,7 @@ function Card({ title, description, icon }) {
     <div className="card">
       <div className="card-icon">{icon}</div>
       <h3>{title}</h3>
-      <p>{description}</p>
+      {description && <p>{description}</p>}
       <button>Open Workspace →</button>
     </div>
   );
