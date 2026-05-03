@@ -3,7 +3,17 @@ import React, { useState, useEffect } from "react";
 import { FaHome, FaPlus, FaChartBar, FaCog, FaFolder, FaStar, FaBars } from "react-icons/fa";
 import "./Sidebar.css";
 
-function Sidebar({ activeTab, setActiveTab, sidebarOpen, toggleSidebar, onNavigateToDataConnection, onNavigateToHome }) {
+function Sidebar({ 
+  activeTab, 
+  setActiveTab, 
+  sidebarOpen, 
+  toggleSidebar, 
+  onNavigateToDataConnection, 
+  onNavigateToHome,
+  onNavigateToWorkspace,
+  onNavigateToReports,
+  onNavigateToFavourites
+}) {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -11,7 +21,6 @@ function Sidebar({ activeTab, setActiveTab, sidebarOpen, toggleSidebar, onNaviga
     const handleResize = () => {
       const mobile = window.innerWidth <= 1024;
       setIsMobile(mobile);
-      // Reset mobile sidebar state on resize
       if (!mobile) {
         setMobileSidebarOpen(false);
       }
@@ -20,24 +29,28 @@ function Sidebar({ activeTab, setActiveTab, sidebarOpen, toggleSidebar, onNaviga
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const menuItems = [
-    { id: "home", icon: <FaHome />, label: "Home" },
-    { id: "create", icon: <FaPlus />, label: "Create" },
-    { id: "reports", icon: <FaChartBar />, label: "Reports" },
-    { id: "workspaces", icon: <FaFolder />, label: "Workspaces" },
-    { id: "favorites", icon: <FaStar />, label: "Favorites" },
-    { id: "settings", icon: <FaCog />, label: "Settings" },
-  ];
-
   const handleItemClick = (itemId) => {
-    if (itemId === "create" && onNavigateToDataConnection) {
-      onNavigateToDataConnection();
-    } else if (itemId === "home" && onNavigateToHome) {
-      onNavigateToHome();
-    } else {
+    // Navigate based on menu item clicked
+    if (itemId === "create") {
+      if (onNavigateToDataConnection) onNavigateToDataConnection();
+    } 
+    else if (itemId === "home") {
+      if (onNavigateToHome) onNavigateToHome();
+    }
+    else if (itemId === "workspaces") {
+      if (onNavigateToWorkspace) onNavigateToWorkspace();
+    }
+    else if (itemId === "reports") {
+      if (onNavigateToReports) onNavigateToReports();
+    }
+    else if (itemId === "favorites") {
+      if (onNavigateToFavourites) onNavigateToFavourites();
+    }
+    else {
       setActiveTab(itemId);
     }
-    // Close mobile sidebar after clicking an item
+    
+    // Close mobile sidebar after clicking
     if (isMobile && mobileSidebarOpen) {
       setMobileSidebarOpen(false);
     }
@@ -51,8 +64,16 @@ function Sidebar({ activeTab, setActiveTab, sidebarOpen, toggleSidebar, onNaviga
     }
   };
 
-  // Determine if sidebar should show as expanded
   const isExpanded = isMobile ? mobileSidebarOpen : sidebarOpen;
+
+  const menuItems = [
+    { id: "home", icon: <FaHome />, label: "Home" },
+    { id: "create", icon: <FaPlus />, label: "Create" },
+    { id: "reports", icon: <FaChartBar />, label: "Reports" },
+    { id: "workspaces", icon: <FaFolder />, label: "Workspaces" },
+    { id: "favorites", icon: <FaStar />, label: "Favorites" },
+    { id: "settings", icon: <FaCog />, label: "Settings" },
+  ];
 
   return (
     <div className={`sidebar ${isExpanded ? "open" : "closed"}`}>

@@ -2,13 +2,15 @@
 import React from "react";
 import "./Card.css";
 
-function Card({ title, description, icon }) {
+function Card({ title, description, icon, buttonText, onButtonClick }) {
   return (
     <div className="card">
       <div className="card-icon">{icon}</div>
       <h3>{title}</h3>
       {description && <p>{description}</p>}
-      <button>Open Workspace →</button>
+      <button onClick={onButtonClick}>
+        {buttonText || "Open →"}
+      </button>
     </div>
   );
 }

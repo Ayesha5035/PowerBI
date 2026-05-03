@@ -6,7 +6,12 @@ import Card from "../Card/Card";
 import { FaPlus, FaFileAlt, FaClock, FaFolderOpen, FaChartLine, FaHeart } from "react-icons/fa";
 import "./Dashboard.css";
 
-function Dashboard({ onNavigateToDataConnection }) {
+function Dashboard({ 
+  onNavigateToDataConnection,
+  onNavigateToWorkspace,
+  onNavigateToReports,
+  onNavigateToFavourites
+}) {
   const [activeTab, setActiveTab] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [recentReports, setRecentReports] = useState([]);
@@ -37,25 +42,27 @@ function Dashboard({ onNavigateToDataConnection }) {
     setActiveTab("home");
   };
 
-  // Card click handlers
+  // Card click handlers - THESE WILL NAVIGATE TO PAGES
   const handleOpenWorkspace = () => {
-    alert("Opening My Workspace...");
-    // You can navigate to workspace page here
+    if (onNavigateToWorkspace) {
+      onNavigateToWorkspace();
+    }
   };
 
   const handleOpenReportsHub = () => {
-    alert("Opening Reports Hub...");
-    // You can navigate to reports page here
+    if (onNavigateToReports) {
+      onNavigateToReports();
+    }
   };
 
   const handleOpenFavourites = () => {
-    alert("Opening Favourites...");
-    // You can navigate to favourites page here
+    if (onNavigateToFavourites) {
+      onNavigateToFavourites();
+    }
   };
 
   const handleOpenRecentReport = (report) => {
     alert(`Opening: ${report.name}`);
-    // You can navigate to report viewer here
   };
 
   return (
@@ -67,6 +74,9 @@ function Dashboard({ onNavigateToDataConnection }) {
         toggleSidebar={toggleSidebar}
         onNavigateToDataConnection={onNavigateToDataConnection}
         onNavigateToHome={handleNavigateToHome}
+        onNavigateToWorkspace={onNavigateToWorkspace}
+        onNavigateToReports={onNavigateToReports}
+        onNavigateToFavourites={onNavigateToFavourites}
       />
       <Navbar sidebarOpen={sidebarOpen} />
       
@@ -91,21 +101,21 @@ function Dashboard({ onNavigateToDataConnection }) {
             title="My Workspace"
             icon="📊"
             description="Personal workspace for your daily analytics"
-            buttonText="Open Workspace"
+            buttonText="Open Workspace →"
             onButtonClick={handleOpenWorkspace}
           />
           <Card 
             title="Reports Hub"
             icon="📈"
             description="Central repository for all your reports"
-            buttonText="Open Reports"
+            buttonText="Open Reports →"
             onButtonClick={handleOpenReportsHub}
           />
           <Card 
             title="Favourites"
             icon="❤️"
             description="Your most used reports and dashboards"
-            buttonText="Open Favourites"
+            buttonText="Open Favourites →"
             onButtonClick={handleOpenFavourites}
           />
         </div>
