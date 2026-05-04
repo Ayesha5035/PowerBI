@@ -9,8 +9,8 @@ import "./Dashboard.css";
 function Dashboard({ 
   onNavigateToDataConnection,
   onNavigateToWorkspace,
-  onNavigateToReports,
-  onNavigateToFavourites
+  onNavigateToFavourites,
+  onNavigateToReportBuilder
 }) {
   const [activeTab, setActiveTab] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -42,16 +42,16 @@ function Dashboard({
     setActiveTab("home");
   };
 
-  // Card click handlers - THESE WILL NAVIGATE TO PAGES
+  // Card click handlers
   const handleOpenWorkspace = () => {
     if (onNavigateToWorkspace) {
       onNavigateToWorkspace();
     }
   };
 
-  const handleOpenReportsHub = () => {
-    if (onNavigateToReports) {
-      onNavigateToReports();
+  const handleOpenReportBuilder = () => {
+    if (onNavigateToReportBuilder) {
+      onNavigateToReportBuilder();
     }
   };
 
@@ -75,8 +75,8 @@ function Dashboard({
         onNavigateToDataConnection={onNavigateToDataConnection}
         onNavigateToHome={handleNavigateToHome}
         onNavigateToWorkspace={onNavigateToWorkspace}
-        onNavigateToReports={onNavigateToReports}
         onNavigateToFavourites={onNavigateToFavourites}
+        onNavigateToReportBuilder={onNavigateToReportBuilder}
       />
       <Navbar sidebarOpen={sidebarOpen} />
       
@@ -107,9 +107,9 @@ function Dashboard({
           <Card 
             title="Reports Hub"
             icon="📈"
-            description="Central repository for all your reports"
-            buttonText="Open Reports →"
-            onButtonClick={handleOpenReportsHub}
+            description="Build and manage your reports"
+            buttonText="Open Report Builder →"
+            onButtonClick={handleOpenReportBuilder}
           />
           <Card 
             title="Favourites"
