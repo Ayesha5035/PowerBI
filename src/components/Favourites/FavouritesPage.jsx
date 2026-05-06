@@ -47,7 +47,7 @@ function FavouritesPage({
           </button>
           
           <div className="favourites-header">
-            <h1>❤️ My Favourites</h1>
+            <h1>⭐ My Favourites</h1>
             <p>Your most used reports and dashboards</p>
           </div>
           

@@ -14,8 +14,7 @@ import "./DataConnectionPage.css";
 
 const DataConnectionPage = ({ onBackToDashboard }) => {
   const [activeTab, setActiveTab] = useState("create");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 768);
   // State for uploaded data preview
   const [uploadedData, setUploadedData] = useState(null);
   const [uploadedFileName, setUploadedFileName] = useState(null);
@@ -158,7 +157,6 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
       );
     }
      console.log('Rendering card for:', source.id, source.name);
-    // Fixed: Added explicit cursor pointer and ensured onClick works
     return (
       <div key={source.id} onClick={() => handleCardClick(source.id)} style={{ cursor: 'pointer' }}>
         {cardContent}
@@ -178,6 +176,7 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
       />
       <Navbar sidebarOpen={sidebarOpen} />
       <div className={`dataconnection-page ${sidebarOpen ? "open" : "closed"}`}>
+        {/* Container for everything except the preview */}
         <div className="dataconnection-container">
           <button className="back-button" onClick={onBackToDashboard}>
             <FiArrowLeft size={18} /> Back to Dashboard
@@ -189,18 +188,20 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
             {dataSources.map(source => renderDataSourceCard(source))}
           </div>
 
-         
-          {/* Data Preview Component */}
-          {uploadedData && (
-            <DataPreview 
-              data={uploadedData}
-              fileName={uploadedFileName}
-              onSave={handleSaveToDatabase}
-              onDiscard={handleDiscardData}
-              onEdit={handleEditData}
-            />
-          )}
+          
+          
         </div>
+
+        {/* Data Preview Component – placed OUTSIDE the container */}
+        {uploadedData && (
+          <DataPreview 
+            data={uploadedData}
+            fileName={uploadedFileName}
+            onSave={handleSaveToDatabase}
+            onDiscard={handleDiscardData}
+            onEdit={handleEditData}
+          />
+        )}
       </div>
       
       {/* SQL Server Modal */}

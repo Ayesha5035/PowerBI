@@ -89,7 +89,7 @@
   border: 2px solid rgba(255, 255, 255, 0.8);
 }
 
-/* ========== MOBILE RESPONSIVE ========== */
+/* ========== MOBILE RESPONSIVE (FIXED) ========== */
 @media (max-width: 1024px) {
   .navbar {
     margin-left: 0 !important;
@@ -97,7 +97,7 @@
   }
 
   .search-bar {
-    width: 300px;
+    width: 300px ; 
     padding: var(--space-2) 18px;
   }
 
@@ -113,7 +113,8 @@
   }
 
   .search-bar {
-    width: 200px;
+    margin-left: 50px !important;
+    width: 150px !important;
     padding: var(--space-2) var(--space-3);
   }
 
@@ -132,13 +133,39 @@
   }
 }
 
+/* Fixed: Search bar now visible on small mobile devices */
 @media (max-width: 480px) {
+  .navbar {
+    padding: 0 var(--space-3);
+  }
+
   .search-bar {
-    display: none;
+    width: 160px !important;          /* Compact but visible */
+    padding: var(--space-1) var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .search-bar input {
+    font-size: 13px;
+    width: 100%;
+  }
+
+  .search-bar svg {
+    font-size: 16px;
   }
 
   .user-info {
     gap: var(--space-2);
     padding: var(--space-sm) var(--space-3);
+  }
+
+  .profile-img {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Optionally hide user name text on very small screens if needed */
+  .user-info span {
+    display: none;
   }
 }
