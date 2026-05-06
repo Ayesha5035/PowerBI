@@ -11,8 +11,8 @@ function Sidebar({
   onNavigateToDataConnection, 
   onNavigateToHome,
   onNavigateToWorkspace,
-  onNavigateToReports,
-  onNavigateToFavourites
+  onNavigateToFavourites,
+  onNavigateToReportBuilder
 }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -41,7 +41,7 @@ function Sidebar({
       if (onNavigateToWorkspace) onNavigateToWorkspace();
     }
     else if (itemId === "reports") {
-      if (onNavigateToReports) onNavigateToReports();
+      if (onNavigateToReportBuilder) onNavigateToReportBuilder();
     }
     else if (itemId === "favorites") {
       if (onNavigateToFavourites) onNavigateToFavourites();

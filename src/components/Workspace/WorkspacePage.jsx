@@ -9,8 +9,8 @@ function WorkspacePage({
   onBackToDashboard,
   onNavigateToDataConnection,
   onNavigateToWorkspace,
-  onNavigateToReports,
-  onNavigateToFavourites
+  onNavigateToFavourites,
+  onNavigateToReportBuilder
 }) {
   const [activeTab, setActiveTab] = useState("workspaces");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -35,8 +35,8 @@ function WorkspacePage({
         onNavigateToHome={handleNavigateToHome}
         onNavigateToDataConnection={onNavigateToDataConnection}
         onNavigateToWorkspace={onNavigateToWorkspace}
-        onNavigateToReports={onNavigateToReports}
         onNavigateToFavourites={onNavigateToFavourites}
+        onNavigateToReportBuilder={onNavigateToReportBuilder}
       />
       <Navbar sidebarOpen={sidebarOpen} />
       
