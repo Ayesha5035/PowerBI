@@ -14,12 +14,10 @@
   z-index: var(--z-sidebar);
 }
 
-/* Closed sidebar - only icons visible */
 .sidebar.closed {
   width: var(--sidebar-width-closed);
 }
 
-/* Open sidebar - full width */
 .sidebar.open {
   width: var(--sidebar-width-open);
 }
@@ -148,17 +146,14 @@
   box-shadow: var(--shadow-accent);
 }
 
-/* ========== RESPONSIVE - MOBILE BEHAVIOR ========== */
-/* On tablet and mobile, sidebar starts collapsed (icons only) */
+/* ========== RESPONSIVE ========== */
 @media (max-width: 1024px) {
   .sidebar {
     width: var(--sidebar-width-closed);
   }
-
   .sidebar.open {
     width: var(--sidebar-width-open);
   }
-
   .sidebar.closed {
     width: var(--sidebar-width-closed);
   }
@@ -166,27 +161,35 @@
 
 @media (max-width: 768px) {
   .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
     width: 70px;
+    z-index: 1000;
   }
-
   .sidebar.open {
     width: 240px;
   }
-
+  .sidebar.open::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 240px;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.4);
+  }
   .sidebar.closed {
     width: 70px;
   }
-
   .sidebar.closed ul li .menu-label-closed {
     font-size: 10px;
   }
-
   .sidebar.closed ul li svg {
     font-size: 20px;
   }
 }
 
-/* Overlay for mobile when sidebar is open */
 @media (max-width: 1024px) {
   .sidebar.open::before {
     content: '';

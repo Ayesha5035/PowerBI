@@ -32,24 +32,95 @@
 }
 
 @media (max-width: 768px) {
-  .dataconnection-page.open,
   .dataconnection-page.closed {
-    margin-left: 70px;
+    padding: 12px;
+    padding-left: 50px;
+  }
+
+  .dataconnection-page.open {
+    padding-left: 0; 
   }
 
   .dataconnection-page {
-    padding: 15px;
-    margin-top: 60px;
+    padding: 12px;
+    padding-left: 50px;
   }
 
   .dataconnection-container {
-    padding: 20px;
+     max-width: 100%;
+    margin: 0;
+    border-radius: 12px;
   }
 
-  .datasources-grid,
+  .datasources-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+    width: 100%;
+  }
+
   .items-grid {
-    grid-template-columns: 1fr;
-    gap: var(--space-3);
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .datasource-card {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 12px 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .datasource-icon {
+    width: 40px !important;
+    height: 40px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .datasource-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .datasource-name {
+    font-size: 14px !important;
+    word-break: break-word;
+    white-space: normal;
+  }
+
+  .datasource-desc {
+    font-size: 11px !important;
+    word-break: break-word;
+    white-space: normal;
+  }
+
+  .info-section,
+  .other-items-section {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .item-card {
+    padding: 12px !important;
+    gap: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .item-icon {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .item-name {
+    font-size: 14px !important;
+  }
+
+  .item-desc {
+    font-size: 11px !important;
   }
 
   .dataconnection-title {
@@ -65,11 +136,11 @@
   }
 
   .dataconnection-page {
-    padding: 12px;
+    padding: 10px;
   }
 
   .dataconnection-container {
-    padding: var(--space-4);
+    padding: 12px;
   }
 
   .dataconnection-title {
@@ -80,6 +151,19 @@
     margin-bottom: var(--space-3);
     padding: 5px 10px;
     font-size: var(--text-sm);
+  }
+
+  .datasource-icon {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .datasource-name {
+    font-size: 13px !important;
+  }
+
+  .datasource-desc {
+    font-size: 10px !important;
   }
 }
 
@@ -96,7 +180,7 @@
 
 .dataconnection-container {
   max-width: 1000px;
-  margin: 0 auto;
+  margin: 0 ;
   background: var(--color-card-bg);
   border-radius: var(--radius-xl);
   padding: var(--space-8);
@@ -148,7 +232,7 @@
   background: var(--color-card-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);  /* ← ADD THIS LINE */
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: var(--transition-base);
 }
@@ -254,10 +338,10 @@
   display: flex;
   gap: var(--space-4);
   padding: var(--space-5);
-  background: var(--color-card-bg);  /* ← CHANGE from card-bg-alt to card-bg */
+  background: var(--color-card-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);  /* ← ADD THIS LINE */
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: var(--transition-base);
 }

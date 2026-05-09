@@ -20,6 +20,71 @@
   margin-left: var(--sidebar-width-closed);
 }
 
+/* ========== RESPONSIVE DASHBOARD ========== */
+@media (max-width: 1024px) {
+  .dashboard.open,
+  .dashboard.closed {
+    margin-left: var(--sidebar-width-closed);
+  }
+
+  .dashboard {
+    padding: 20px;
+    margin-top: var(--navbar-height);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard.open,
+  .dashboard.closed {
+    margin-left: 50px;
+  }
+
+  .dashboard {
+    padding: 15px;
+    margin-top: 60px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .dashboard-header h1 {
+    font-size: var(--text-2xl);
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .section-title {
+    font-size: var(--text-xl);
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard.open,
+  .dashboard.closed {
+    margin-left: 0;
+  }
+
+  .dashboard {
+    padding: 12px;
+    margin-top: 60px;
+  }
+
+  .dashboard-header h1 {
+    font-size: var(--text-lg);
+  }
+
+  .new-report {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-base);
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

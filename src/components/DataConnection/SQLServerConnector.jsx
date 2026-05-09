@@ -1,6 +1,6 @@
 // src/components/DataConnection/SQLServerConnector.jsx
 import React, { useState } from 'react';
-import { FiDatabase, FiCheck, FiX, FiLoader, FiRefreshCw, FiTable, FiSave } from 'react-icons/fi';
+import { FiDatabase, FiCheck, FiX, FiLoader, FiRefreshCw, FiTable, FiSave, FiInfo } from 'react-icons/fi';
 import './SQLServerConnector.css';
 
 const SQLServerConnector = ({ onConnect, onClose }) => {
@@ -23,6 +23,9 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
   const [showTableSelector, setShowTableSelector] = useState(false);
   const [executing, setExecuting] = useState(false);
   const [queryResult, setQueryResult] = useState(null);
+  
+  // ✅ NEW: State for collapsible tips
+  const [showFullTips, setShowFullTips] = useState(false);
 
   const handleConfigChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -46,7 +49,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
     setConnectionStatus({ type: 'loading', message: 'Testing connection...' });
     
     try {
-      const response = await fetch('http://localhost:5000/api/test-connection', {
+      const response = await fetch('/api/test-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(connectionConfig)
@@ -165,6 +168,28 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
     }
   };
 
+  // ✅ Tips content
+  const tipsSummary = "For default instance: use computer name or IP";
+  const tipsFull = [
+    "For default instance: use computer name or IP (e.g., FAROOQ or localhost)",
+    "For named instance: use COMPUTER\\INSTANCE (e.g., FAROOQ\\SQLEXPRESS)",
+    "If using named instance, ensure SQL Browser service is running"
+  ];
+
+  // Helper function to format cell values
+  const formatCellValue = (val) => {
+    if (val === null || val === undefined) {
+      return 'NULL';
+    }
+    if (typeof val === 'object') {
+      return JSON.stringify(val).slice(0, 100);
+    }
+    if (typeof val === 'string') {
+      return val.length > 100 ? val.slice(0, 100) + '...' : val;
+    }
+    return String(val);
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="sql-modal" onClick={(e) => e.stopPropagation()}>
@@ -174,7 +199,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
         </div>
         
         <div className="sql-modal-body">
-          <div className="form-section-title">📡 Connection Settings</div>
+          <div className="form-section-title">Connection Settings</div>
           
           <div className="form-row">
             <div className="form-group half">
@@ -186,13 +211,32 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
                 value={connectionConfig.server}
                 onChange={handleConfigChange}
               />
-              {/* ✅ PASTE THE HELPER TEXT HERE - INSIDE the form-group after input */}
-              <small className="form-hint">
-                💡 <strong>Tips:</strong><br/>
-                • For default instance: use computer name or IP (e.g., FAROOQ or localhost)<br/>
-                • For named instance: use COMPUTER\INSTANCE (e.g., FAROOQ\SQLEXPRESS)<br/>
-                • If using named instance, ensure SQL Browser service is running
-              </small>
+              {/* ✅ NEW: Collapsible Tips with Read More */}
+              <div className="tips-section">
+                <div className="tips-header" onClick={() => setShowFullTips(!showFullTips)}>
+                  <FiInfo className="tips-icon" />
+                  <span className="tips-summary">💡 Tips: {tipsSummary}</span>
+                  {!showFullTips && (
+                    <button className="tips-toggle-readmore" onClick={() => setShowFullTips(true)}>
+                      Read more
+                    </button>
+                  )}
+                  {showFullTips && (
+                    <button className="tips-toggle-showless" onClick={() => setShowFullTips(false)}>
+                      Show less
+                    </button>
+                  )}
+                </div>
+                {showFullTips && (
+                  <div className="tips-content">
+                    <ul>
+                      {tipsFull.map((tip, idx) => (
+                        <li key={idx}>{tip}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="form-group half">
@@ -243,7 +287,6 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
                 value={connectionConfig.port}
                 onChange={handleConfigChange}
               />
-              {/* ✅ PASTE THE PORT HELPER TEXT HERE */}
               <small className="form-hint">
                 Default is 1433. Only needed for direct connection (without instance name)
               </small>
