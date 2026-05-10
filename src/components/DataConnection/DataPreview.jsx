@@ -9,10 +9,10 @@ const DataPreview = ({ data, fileName, onSave, onDiscard, onEdit }) => {
   // Get column headers from first row
   const headers = data && data.length > 0 ? Object.keys(data[0]) : [];
   
-  // Show only first 15 rows as preview
-  const previewRows = data ? data.slice(0, 15) : [];
+  // Show only first 5 rows as preview
+  const previewRows = data ? data.slice(0, 5) : [];
   const totalRows = data ? data.length : 0;
-  const hasMoreRows = totalRows > 15;
+  const hasMoreRows = totalRows > 5;
   
   // Format cell value for display
   const formatCellValue = (value) => {
@@ -97,7 +97,7 @@ const DataPreview = ({ data, fileName, onSave, onDiscard, onEdit }) => {
         {hasMoreRows && (
           <div className="empty-state" style={{ padding: '16px', borderTop: '1px solid #e2e8f0' }}>
             <div className="empty-state-desc">
-              Showing first 15 of {totalRows.toLocaleString()} rows
+              Showing first 5 of {totalRows.toLocaleString()} rows
             </div>
           </div>
         )}
