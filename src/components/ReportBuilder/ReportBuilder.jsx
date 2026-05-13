@@ -15,19 +15,103 @@ import {
 } from 'recharts';
 import "./ReportBuilder.css";
 
-const ReportBuilder = ({ onBackToDashboard }) => {
+// Item type constant for drag and drop
+const ItemTypes = {
+  FIELD: 'field'
+};
+
+// Draggable Field Component
+const DraggableField = ({ field }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ItemTypes.FIELD,
+    item: { field },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }));
+
+  return (
+    <div
+      ref={drag}
+      className={`field-item ${isDragging ? 'dragging' : ''}`}
+      style={{ opacity: isDragging ? 0.5 : 1, cursor: 'grab' }}
+      draggable="true"
+    >
+      <span className="field-icon" style={{ color: field.color }}>
+        {field.icon}
+      </span>
+      <span className="field-name">{field.name}</span>
+      <span className="field-type">{field.type}</span>
+    </div>
+  );
+};
+
+// Drop Zone Component for Axis
+const DropZone = ({ label, value, onDrop, onClear, icon }) => {
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: ItemTypes.FIELD,
+    drop: (item) => onDrop(item.field),
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver(),
+    }),
+  }));
+
+  return (
+    <div className="axis-field">
+      <label>{label}</label>
+      <div
+        ref={drop}
+        className={`axis-dropzone ${isOver ? 'drag-over' : ''} ${value ? 'filled' : ''}`}
+      >
+        {value ? (
+          <>
+            <span className="axis-value">📊 {value}</span>
+            <button
+              className="axis-clear"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClear();
+              }}
+            >
+              ✕
+            </button>
+          </>
+        ) : (
+          <span className="axis-placeholder">
+            {icon} Drop field here
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const ReportBuilder = ({ onBackToDashboard, uploadedData, uploadedFileName, uploadedColumns }) => {
   const [activeTab, setActiveTab] = useState("reports");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [charts, setCharts] = useState([]);
   const [selectedChartId, setSelectedChartId] = useState(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsChartId, setSettingsChartId] = useState(null);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showValueFilterModal, setShowValueFilterModal] = useState(false);
+  const [selectedValueColumn, setSelectedValueColumn] = useState(null);
   const [expandedSections, setExpandedSections] = useState({
     data: true,
     fields: true,
     visualizations: true,
     filters: true
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredFields, setFilteredFields] = useState([]);
+  const [activeFilters, setActiveFilters] = useState([]);
+  const [isReadingView, setIsReadingView] = useState(false);
+  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
+  const [columnFilters, setColumnFilters] = useState([]);
+  const [valueFilters, setValueFilters] = useState({});
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [maxRows, setMaxRows] = useState(1000);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
@@ -138,37 +222,186 @@ const ReportBuilder = ({ onBackToDashboard }) => {
     }
   };
 
-  // Sample data for chart preview (replace with real data later)
-  const getSampleChartData = (chartType) => {
-    const data = [
-      { time: "10:00", temperature: 72, pressure: 4.2, speed: 115, efficiency: 94 },
-      { time: "11:00", temperature: 74, pressure: 4.3, speed: 118, efficiency: 95 },
-      { time: "12:00", temperature: 73, pressure: 4.1, speed: 120, efficiency: 96 },
-      { time: "13:00", temperature: 75, pressure: 4.4, speed: 122, efficiency: 95 },
-      { time: "14:00", temperature: 74, pressure: 4.2, speed: 119, efficiency: 94 }
-    ];
-    return data;
+  // Get filtered data for a chart
+  const getChartDataForChart = (chart) => {
+    if (!hasData) return [];
+    let filtered = [...uploadedData];
+    const chartFilters = chart.config.filters || { minMax: {}, dateRange: {} };
+    const yAxisColumn = chart.config.yAxis;
+    const filterConfig = chartFilters.minMax[yAxisColumn];
+
+    if (filterConfig) {
+      const { min, max } = filterConfig;
+      if (min !== '' && min !== undefined && min !== null) {
+        filtered = filtered.filter(row => {
+          const val = Number(row[yAxisColumn]);
+          return !isNaN(val) && val >= Number(min);
+        });
+      }
+      if (max !== '' && max !== undefined && max !== null) {
+        filtered = filtered.filter(row => {
+          const val = Number(row[yAxisColumn]);
+          return !isNaN(val) && val <= Number(max);
+        });
+      }
+    }
+
+    const { start, end } = chartFilters.dateRange;
+    if (start || end) {
+      const dateColumn = uploadedColumns?.find(col =>
+        col.toLowerCase().includes('date') ||
+        col.toLowerCase().includes('time') ||
+        col.toLowerCase().includes('timestamp')
+      );
+      if (dateColumn) {
+        filtered = filtered.filter(row => {
+          const rowDate = new Date(row[dateColumn]);
+          if (isNaN(rowDate.getTime())) return true;
+          if (start) {
+            const startDate = new Date(start);
+            if (!isNaN(startDate.getTime()) && startDate > rowDate) return false;
+          }
+          if (end) {
+            const endDate = new Date(end);
+            if (!isNaN(endDate.getTime()) && endDate < rowDate) return false;
+          }
+          return true;
+        });
+      }
+    }
+    return filtered.slice(0, maxRows);
+  };
+
+  const currentChart = charts.find(c => c.id === selectedChartId);
+
+  const renderChart = (chart) => {
+    const chartSpecificData = getChartDataForChart(chart);
+
+    if (!hasData || chartSpecificData.length === 0) {
+      return (
+        <div className="chart-placeholder">
+          <p>No data available for this chart</p>
+          <small>Please adjust filters or upload data</small>
+        </div>
+      );
+    }
+
+    const { xAxis, yAxis } = chart.config;
+
+    const getPieDataForChart = () => {
+      const grouped = {};
+      chartSpecificData.forEach(row => {
+        const key = String(row[xAxis] || 'Other');
+        const value = Number(row[yAxis]) || 0;
+        if (!grouped[key]) grouped[key] = 0;
+        grouped[key] += value;
+      });
+      return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+    };
+
+    const pieData = getPieDataForChart();
+    const kpiValue = chartSpecificData.reduce((sum, row) => sum + (Number(row[yAxis]) || 0), 0) / chartSpecificData.length;
+
+    switch (chart.type) {
+      case 'line':
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartSpecificData}>
+              {chart.config.showGrid && <CartesianGrid strokeDasharray="3 3" />}
+              <XAxis dataKey={xAxis} angle={-45} textAnchor="end" height={60} />
+              <YAxis />
+              <Tooltip />
+              {chart.config.showLegend && <Legend />}
+              <Line
+                type="monotone"
+                dataKey={yAxis}
+                stroke={chart.config.color || "#667eea"}
+                strokeWidth={2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+
+      case 'bar':
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartSpecificData}>
+              {chart.config.showGrid && <CartesianGrid strokeDasharray="3 3" />}
+              <XAxis dataKey={xAxis} angle={-45} textAnchor="end" height={60} />
+              <YAxis />
+              <Tooltip />
+              {chart.config.showLegend && <Legend />}
+              <Bar dataKey={yAxis} fill={chart.config.color || "#48bb78"} radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+
+      case 'pie':
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                labelLine={true}
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+
+      case 'kpi':
+        const formattedValue = typeof kpiValue === 'number' ? kpiValue.toFixed(2) : kpiValue;
+        return (
+          <div className="kpi-card">
+            <div className="kpi-icon"><FiActivity size={48} color="#01b8aa" /></div>
+            <div className="kpi-number">{formattedValue}</div>
+            <div className="kpi-label">Average {yAxis}</div>
+            <div className="kpi-footer">Based on {chartSpecificData.length} records</div>
+          </div>
+        );
+
+      default:
+        return <div>Chart type not supported</div>;
+    }
   };
 
   return (
-    <div>
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        sidebarOpen={sidebarOpen}
-        toggleSidebar={toggleSidebar}
-        onNavigateToDataConnection={() => { }}
-        onNavigateToHome={handleNavigateToHome}
-      />
-      <Navbar sidebarOpen={sidebarOpen} />
+    <DndProvider backend={HTML5Backend}>
+      <div>
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          sidebarOpen={sidebarOpen}
+          toggleSidebar={toggleSidebar}
+          onNavigateToDataConnection={() => { }}
+          onNavigateToHome={handleNavigateToHome}
+        />
+        <Navbar sidebarOpen={sidebarOpen} />
 
-      <div className={`reportbuilder-page ${sidebarOpen ? "open" : "closed"}`}>
-        {/* Top Navigation Bar */}
-        <div className="reportbuilder-topbar">
-
-          <div className="topbar-actions">
-            <button className="topbar-action-btn">💾 Save</button>
-            <button className="topbar-action-btn">📥 Export</button>
+        <div className={`reportbuilder-page ${sidebarOpen ? "open" : "closed"}`}>
+          {/* Top action bar */}
+          <div className="reportbuilder-topbar">
+            <div className="topbar-actions">
+              <button className="topbar-action-btn" onClick={() => alert("Save feature coming soon")}>
+                <FiSave size={14} /> Save
+              </button>
+              <button className="topbar-action-btn" onClick={() => alert("Export feature coming soon")}>
+                <FiDownload size={14} /> Export
+              </button>
+            </div>
           </div>
 
           {/* Show data info if uploaded */}
@@ -415,96 +648,6 @@ const ReportBuilder = ({ onBackToDashboard }) => {
                             onClear={() => clearYAxis(selectedChartId)}
                             icon="📈"
                           />
-
-                          {/* Chart-Specific Value Filter */}
-                          <div className="filter-group" style={{ marginTop: '16px' }}>
-                            <div className="filter-header">
-                              <span>📈 Value Filter ({currentChart?.config.yAxis})</span>
-                              <span
-                                className="filter-clear"
-                                onClick={() => {
-                                  setCharts(charts.map(chart =>
-                                    chart.id === selectedChartId
-                                      ? {
-                                        ...chart,
-                                        config: {
-                                          ...chart.config,
-                                          filters: {
-                                            ...chart.config.filters,
-                                            minMax: {}
-                                          }
-                                        }
-                                      }
-                                      : chart
-                                  ));
-                                }}
-                              >
-                                Clear
-                              </span>
-                            </div>
-
-                            <div className="value-filter-inputs">
-                              <input
-                                type="number"
-                                placeholder={`Min ${currentChart?.config.yAxis}`}
-                                className="value-filter-input"
-                                value={currentChart?.config.filters?.minMax?.[currentChart?.config.yAxis]?.min || ''}
-                                onChange={(e) => {
-                                  const currentMinMax = currentChart?.config.filters?.minMax || {};
-                                  setCharts(charts.map(chart =>
-                                    chart.id === selectedChartId
-                                      ? {
-                                        ...chart,
-                                        config: {
-                                          ...chart.config,
-                                          filters: {
-                                            ...chart.config.filters,
-                                            minMax: {
-                                              ...currentMinMax,
-                                              [currentChart.config.yAxis]: {
-                                                ...currentMinMax[currentChart.config.yAxis],
-                                                min: e.target.value
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                      : chart
-                                  ));
-                                }}
-                              />
-                              <span>to</span>
-                              <input
-                                type="number"
-                                placeholder={`Max ${currentChart?.config.yAxis}`}
-                                className="value-filter-input"
-                                value={currentChart?.config.filters?.minMax?.[currentChart?.config.yAxis]?.max || ''}
-                                onChange={(e) => {
-                                  const currentMinMax = currentChart?.config.filters?.minMax || {};
-                                  setCharts(charts.map(chart =>
-                                    chart.id === selectedChartId
-                                      ? {
-                                        ...chart,
-                                        config: {
-                                          ...chart.config,
-                                          filters: {
-                                            ...chart.config.filters,
-                                            minMax: {
-                                              ...currentMinMax,
-                                              [currentChart.config.yAxis]: {
-                                                ...currentMinMax[currentChart.config.yAxis],
-                                                max: e.target.value
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                      : chart
-                                  ));
-                                }}
-                              />
-                            </div>
-                          </div>
                         </div>
                       )}
                     </div>
@@ -538,124 +681,6 @@ const ReportBuilder = ({ onBackToDashboard }) => {
                           <option value={100000}>All rows</option>
                         </select>
                       </div>
-
-                      <div className="filter-group">
-                        <div className="filter-header">
-                          <span>📈 Value Filters (Min/Max)</span>
-                          <span className="filter-clear" onClick={() => setValueFilters({})}>
-                            Clear All
-                          </span>
-                        </div>
-                        <div className="value-filters-list">
-                          {Object.entries(valueFilters).map(([column, { min, max }]) => (
-                            <div key={column} className="value-filter-item">
-                              <span className="value-filter-name">{column}</span>
-                              <div className="value-filter-inputs">
-                                <input
-                                  type="number"
-                                  placeholder="Min"
-                                  value={min}
-                                  onChange={(e) => {
-                                    setValueFilters({
-                                      ...valueFilters,
-                                      [column]: { ...valueFilters[column], min: e.target.value }
-                                    });
-                                  }}
-                                  className="value-filter-input"
-                                />
-                                <span>to</span>
-                                <input
-                                  type="number"
-                                  placeholder="Max"
-                                  value={max}
-                                  onChange={(e) => {
-                                    setValueFilters({
-                                      ...valueFilters,
-                                      [column]: { ...valueFilters[column], max: e.target.value }
-                                    });
-                                  }}
-                                  className="value-filter-input"
-                                />
-                                <button
-                                  className="remove-filter-btn"
-                                  onClick={() => {
-                                    const newFilters = { ...valueFilters };
-                                    delete newFilters[column];
-                                    setValueFilters(newFilters);
-                                  }}
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-
-                          <button
-                            className="add-filter-btn"
-                            onClick={() => setShowValueFilterModal(true)}
-                          >
-                            + Add Value Filter
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="filter-group">
-                        <div className="filter-header">
-                          <span>📅 Date Range</span>
-                          <span className="filter-clear" onClick={() => setDateRange({ start: '', end: '' })}>
-                            Clear
-                          </span>
-                        </div>
-                        <div className="date-range-inputs">
-                          <input
-                            type="datetime-local"
-                            className="date-input"
-                            value={dateRange.start}
-                            onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                            placeholder="Start Date"
-                          />
-                          <span>to</span>
-                          <input
-                            type="datetime-local"
-                            className="date-input"
-                            value={dateRange.end}
-                            onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                            placeholder="End Date"
-                          />
-                        </div>
-                      </div>
-
-                      {(columnFilters.length > 0 || Object.keys(valueFilters).length > 0 || dateRange.start || dateRange.end) && (
-                        <div className="active-filters-summary">
-                          <div className="filter-header">
-                            <span>✅ Active Filters</span>
-                            <span className="filter-clear" onClick={() => {
-                              setColumnFilters([]);
-                              setValueFilters({});
-                              setDateRange({ start: '', end: '' });
-                            }}>
-                              Clear All
-                            </span>
-                          </div>
-                          <div className="active-filters-list">
-                            {columnFilters.length > 0 && (
-                              <div className="active-filter-tag">
-                                📊 {columnFilters.length} column(s) selected
-                              </div>
-                            )}
-                            {Object.keys(valueFilters).length > 0 && (
-                              <div className="active-filter-tag">
-                                📈 {Object.keys(valueFilters).length} value filter(s)
-                              </div>
-                            )}
-                            {(dateRange.start || dateRange.end) && (
-                              <div className="active-filter-tag">
-                                📅 Date range applied
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -663,201 +688,6 @@ const ReportBuilder = ({ onBackToDashboard }) => {
             )}
           </div>
         </div>
-
-        {/* Filter Modal */}
-        {showFilterModal && (
-          <div className="filter-modal-overlay" onClick={() => setShowFilterModal(false)}>
-            <div className="filter-modal" onClick={(e) => e.stopPropagation()}>
-              <h3>Add Data Fields to Filter</h3>
-              <div className="filter-options" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {dataFields.map(field => (
-                  <label key={field.id} className="filter-option">
-                    <input
-                      type="checkbox"
-                      checked={activeFilters.includes(field.name)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setActiveFilters([...activeFilters, field.name]);
-                        } else {
-                          setActiveFilters(activeFilters.filter(f => f !== field.name));
-                        }
-                      }}
-                    /> {field.name}
-                  </label>
-                ))}
-              </div>
-              <div className="filter-modal-buttons">
-                <button className="cancel-btn" onClick={() => setShowFilterModal(false)}>Cancel</button>
-                <button className="apply-btn" onClick={() => setShowFilterModal(false)}>Apply Filters</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Chart Settings Modal */}
-        {showSettingsModal && (
-          <div className="modal-overlay" onClick={() => setShowSettingsModal(false)}>
-            <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>⚙️ Chart Settings</h3>
-                <button className="modal-close" onClick={() => setShowSettingsModal(false)}>×</button>
-              </div>
-              <div className="modal-body">
-                <div className="setting-group">
-                  <label>Chart Type</label>
-                  <div className="chart-type-options">
-                    {chartTypes.map(type => (
-                      <button
-                        key={type.id}
-                        className={`type-option ${charts.find(c => c.id === settingsChartId)?.type === type.id ? 'active' : ''}`}
-                        onClick={() => {
-                          setCharts(charts.map(chart =>
-                            chart.id === settingsChartId
-                              ? { ...chart, type: type.id, name: type.name }
-                              : chart
-                          ));
-                        }}
-                      >
-                        {type.icon} {type.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="setting-group">
-                  <label>Chart Color</label>
-                  <div className="color-options">
-                    {['#667eea', '#48bb78', '#ed8936', '#dc3545', '#9b59b6', '#01b8aa'].map(color => (
-                      <button
-                        key={color}
-                        className={`color-option ${charts.find(c => c.id === settingsChartId)?.config.color === color ? 'active' : ''}`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => {
-                          setCharts(charts.map(chart =>
-                            chart.id === settingsChartId
-                              ? { ...chart, config: { ...chart.config, color: color } }
-                              : chart
-                          ));
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div className="setting-group">
-                  <label>Legend</label>
-                  <div className="toggle-switch">
-                    <button
-                      className={`toggle-option ${charts.find(c => c.id === settingsChartId)?.config.showLegend ? 'active' : ''}`}
-                      onClick={() => {
-                        setCharts(charts.map(chart =>
-                          chart.id === settingsChartId
-                            ? { ...chart, config: { ...chart.config, showLegend: true } }
-                            : chart
-                        ));
-                      }}
-                    >On</button>
-                    <button
-                      className={`toggle-option ${!charts.find(c => c.id === settingsChartId)?.config.showLegend ? 'active' : ''}`}
-                      onClick={() => {
-                        setCharts(charts.map(chart =>
-                          chart.id === settingsChartId
-                            ? { ...chart, config: { ...chart.config, showLegend: false } }
-                            : chart
-                        ));
-                      }}
-                    >Off</button>
-                  </div>
-                </div>
-                <div className="setting-group">
-                  <label>Grid Lines</label>
-                  <div className="toggle-switch">
-                    <button
-                      className={`toggle-option ${charts.find(c => c.id === settingsChartId)?.config.showGrid ? 'active' : ''}`}
-                      onClick={() => {
-                        setCharts(charts.map(chart =>
-                          chart.id === settingsChartId
-                            ? { ...chart, config: { ...chart.config, showGrid: true } }
-                            : chart
-                        ));
-                      }}
-                    >On</button>
-                    <button
-                      className={`toggle-option ${!charts.find(c => c.id === settingsChartId)?.config.showGrid ? 'active' : ''}`}
-                      onClick={() => {
-                        setCharts(charts.map(chart =>
-                          chart.id === settingsChartId
-                            ? { ...chart, config: { ...chart.config, showGrid: false } }
-                            : chart
-                        ));
-                      }}
-                    >Off</button>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button className="apply-btn" onClick={() => setShowSettingsModal(false)}>Apply</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Value Filter Modal */}
-        {showValueFilterModal && (
-          <div className="filter-modal-overlay" onClick={() => setShowValueFilterModal(false)}>
-            <div className="filter-modal" onClick={(e) => e.stopPropagation()}>
-              <h3>Add Value Filter</h3>
-              <div className="filter-options" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <select
-                  className="filter-select"
-                  value={selectedValueColumn || ''}
-                  onChange={(e) => setSelectedValueColumn(e.target.value)}
-                >
-                  <option value="">Select a column</option>
-                  {dataFields.filter(f => f.type === 'number').map(field => (
-                    <option key={field.id} value={field.name}>{field.name}</option>
-                  ))}
-                </select>
-                {selectedValueColumn && (
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <input
-                      type="number"
-                      placeholder="Minimum value"
-                      className="value-filter-input"
-                      id="filter-min"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Maximum value"
-                      className="value-filter-input"
-                      id="filter-max"
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="filter-modal-buttons">
-                <button className="cancel-btn" onClick={() => setShowValueFilterModal(false)}>Cancel</button>
-                <button
-                  className="apply-btn"
-                  onClick={() => {
-                    if (selectedValueColumn) {
-                      const min = document.getElementById('filter-min')?.value || '';
-                      const max = document.getElementById('filter-max')?.value || '';
-                      if (min || max) {
-                        setValueFilters({
-                          ...valueFilters,
-                          [selectedValueColumn]: { min, max }
-                        });
-                      }
-                    }
-                    setShowValueFilterModal(false);
-                    setSelectedValueColumn(null);
-                  }}
-                >
-                  Apply Filter
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </DndProvider>
   );
