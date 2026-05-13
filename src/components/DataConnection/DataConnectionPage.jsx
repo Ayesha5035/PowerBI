@@ -1,145 +1,129 @@
 // src/components/DataConnection/DataConnectionPage.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../Sidebar/Sidebar";
 import Navbar from "../Navbar/Navbar";
 import ExcelUploader from "./ExcelUploader";
 import DataPreview from "./DataPreview";
 import SQLServerConnector from "./SQLServerConnector";
 import ManualEntry from "./ManualEntry";
+import io from 'socket.io-client';  // Add this import
 import { 
-  FiDatabase, FiCloud, FiFileText, FiFile, FiClipboard, 
-  FiBookOpen, FiFolder, FiBook, FiArrowLeft
+  FiDatabase, FiClipboard, FiFileText, FiFile, FiFolder, FiBook, FiArrowLeft, FiLoader
 } from 'react-icons/fi';
 import "./DataConnectionPage.css";
 
-const DataConnectionPage = ({ 
-  onBackToDashboard,
-  sidebarOpen,          
-  toggleSidebar,
-  onNavigateToDataConnection,
-  onNavigateToWorkspace,
-  onNavigateToFavourites,
-  onNavigateToReportBuilder
-}) => {
+const DataConnectionPage = ({ onBackToDashboard }) => {
   const [activeTab, setActiveTab] = useState("create");
-  
-  // State for uploaded data preview
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 768);
   const [uploadedData, setUploadedData] = useState(null);
   const [uploadedFileName, setUploadedFileName] = useState(null);
-  
-  // State for modals and edit functionality
   const [showSQLModal, setShowSQLModal] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
-  
-  // State for editing existing data
   const [editingData, setEditingData] = useState(null);
   const [editingFileName, setEditingFileName] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [socket, setSocket] = useState(null);
 
-  // ========== FUNCTION: Save to Workspace ==========
-  const saveToWorkspace = (data, type, name, details = {}) => {
-    const currentWorkspaceId = localStorage.getItem("currentWorkspaceId");
-    
-    if (!currentWorkspaceId) {
-      console.error("No active workspace found");
-      alert("No workspace selected. Please go to Workspace page first.");
-      return;
-    }
-    
-    const savedWorkspaces = localStorage.getItem("workspaces");
-    if (!savedWorkspaces) {
-      console.error("No workspaces found");
-      alert("No workspaces found. Please create a workspace first.");
-      return;
-    }
-    
-    let workspaces = JSON.parse(savedWorkspaces);
-    const workspaceIndex = workspaces.findIndex(w => w.id === currentWorkspaceId);
-    
-    if (workspaceIndex === -1) {
-      console.error("Current workspace not found");
-      alert("Current workspace not found.");
-      return;
-    }
-    
-    const newItem = {
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-      name: name,
-      type: type,
-      status: "connected",
-      lastRefreshed: new Date().toLocaleString(),
-      rows: data.length,
-      icon: type,
-      ...details
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  // Load saved data on page refresh
+  useEffect(() => {
+    const loadSavedData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch('http://localhost:5000/api/get-imported-data');
+        const result = await response.json();
+        
+        if (result.success && result.data && result.data.length > 0) {
+          setUploadedData(result.data);
+          setUploadedFileName(`SQL_Data_${new Date().toLocaleDateString()}`);
+          console.log(`✅ Loaded ${result.data.length} rows from database`);
+        } else {
+          console.log('No saved data found');
+        }
+      } catch (err) {
+        console.error('Failed to load saved data:', err);
+      }
+      setIsLoading(false);
     };
     
-    workspaces[workspaceIndex].items = workspaces[workspaceIndex].items || [];
-    workspaces[workspaceIndex].items.push(newItem);
-    
-    localStorage.setItem("workspaces", JSON.stringify(workspaces));
-    window.dispatchEvent(new Event("workspaceUpdate"));
-    
-    console.log(`✅ Saved to workspace: ${workspaces[workspaceIndex].name} (${type})`);
-  };
+    loadSavedData();
+  }, []);
 
-  // Callback when Excel/CSV upload is successful
-  const handleFileUpload = (parsedData, fileName) => {
-    console.log(`✅ File uploaded: ${fileName}`);
-    console.log(`📊 Data rows: ${parsedData.length}`);
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    const newSocket = io('http://localhost:5000');
+    setSocket(newSocket);
     
-    setUploadedData(parsedData);
-    setUploadedFileName(fileName);
-    
-    let fileType = "excel";
-    if (fileName.toLowerCase().endsWith(".csv")) {
-      fileType = "csv";
-    }
-    
-    saveToWorkspace(parsedData, fileType, fileName);
-    alert(`Successfully uploaded "${fileName}" with ${parsedData.length} rows of data!`);
-  };
-  
-  // Callback when SQL Server data is imported
-  const handleSQLImport = (data, sourceName) => {
-    console.log(`✅ SQL Data imported: ${sourceName}`);
-    console.log(`📊 Data rows: ${data.length}`);
-    
-    setUploadedData(data);
-    setUploadedFileName(sourceName);
-    
-    saveToWorkspace(data, "sql", sourceName, {
-      server: "SQL Server Connection"
+    newSocket.on('realtime-data-update', (data) => {
+      console.log('📡 Real-time update received:', data);
+      
+      setUploadedData(prevData => {
+        if (!prevData) return data.newRecords;
+        // Add new records to the beginning and keep all
+        return [...data.newRecords, ...prevData];
+      });
+      
+      // Show notification
+      if (data.newRecords.length > 0) {
+        console.log(`✨ ${data.newRecords.length} new records added in real-time!`);
+      }
     });
     
-    alert(`Successfully imported ${data.length} rows from SQL Server!`);
+    return () => newSocket.disconnect();
+  }, []);
+
+  const handleFileUpload = (parsedData, fileName) => {
+    setUploadedData(parsedData);
+    setUploadedFileName(fileName);
+    alert(`Successfully uploaded "${fileName}" with ${parsedData.length} rows!`);
   };
   
-  // Callback when Manual Entry data is saved
+  const handleSQLImport = async (data, sourceName) => {
+    setUploadedData(data);
+    setUploadedFileName(sourceName);
+    alert(`Successfully imported ${data.length} rows from SQL Server! Real-time sync is active.`);
+  };
+  
   const handleManualSave = (data, fileName) => {
-    console.log(`✅ Manual data saved: ${fileName}`);
-    console.log(`📊 Data rows: ${data.length}`);
-    
     setUploadedData(data);
     setUploadedFileName(fileName);
-    
-    saveToWorkspace(data, "manual", fileName);
-    alert(`Successfully saved ${data.length} rows of manual data!`);
+    alert(`Successfully saved ${data.length} rows!`);
   };
   
-  // Handle save to database
   const handleSaveToDatabase = async (data, fileName) => {
-    console.log('💾 Saving to database:', { fileName, rowCount: data.length });
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    alert(`Data from "${fileName}" saved to database successfully!`);
+    try {
+      const response = await fetch('http://localhost:5000/api/save-to-database', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: data,
+          fileName: fileName,
+          source: 'manual'
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        alert(`Data from "${fileName}" saved to database successfully!`);
+      } else {
+        alert('Failed to save to database');
+      }
+    } catch (err) {
+      console.error('Save error:', err);
+      alert('Error saving to database');
+    }
   };
   
-  // Handle discard
   const handleDiscardData = () => {
     setUploadedData(null);
     setUploadedFileName(null);
   };
   
-  // Handle edit data
   const handleEditData = () => {
     setEditingData(uploadedData);
     setEditingFileName(uploadedFileName);
@@ -149,48 +133,22 @@ const DataConnectionPage = ({
   };
 
   const handleCardClick = (sourceId) => {
-    console.log('🖱️ Card clicked:', sourceId);
     if (sourceId === 'sqlserver') {
       setShowSQLModal(true);
     } else if (sourceId === 'paste') {
       setShowManualModal(true);
-    } else {
-      alert(`Connect to ${sourceId}`);
     }
   };
 
   const dataSources = [
     { id: 'sqlserver', name: 'SQL Server', icon: <FiDatabase size={28} />, description: 'Connect to SQL server data sources', color: '#01b8aa', isPrimary: true },
     { id: 'paste', name: 'Paste or manually enter data', icon: <FiClipboard size={28} />, description: 'Copy and paste data', color: '#9b59b6' },
-    { 
-      id: 'excel', 
-      name: 'Excel', 
-      icon: <FiFileText size={28} />, 
-      description: 'Upload Excel file', 
-      color: '#1e6f3f',
-      isUploader: true,
-      acceptedFormats: '.xlsx,.xls'
-    },
-    { 
-      id: 'csv', 
-      name: 'CSV', 
-      icon: <FiFile size={28} />, 
-      description: 'Upload CSV file', 
-      color: '#f39c12',
-      isUploader: true,
-      acceptedFormats: '.csv'
-    },
-  ];
-
-  const otherItems = [
-    { id: 'lakehouse', name: 'Lakehouse', icon: <FiFolder size={28} />, description: 'Store big data for cleaning, querying, reporting, and sharing.' },
-    { id: 'notebook', name: 'Notebook', icon: <FiBook size={28} />, description: 'Explore, analyze, and visualize data and build ML models.' }
+    { id: 'excel', name: 'Excel', icon: <FiFileText size={28} />, description: 'Upload Excel file', color: '#1e6f3f', isUploader: true, acceptedFormats: '.xlsx,.xls' },
+    { id: 'csv', name: 'CSV', icon: <FiFile size={28} />, description: 'Upload CSV file', color: '#f39c12', isUploader: true, acceptedFormats: '.csv' },
   ];
 
   const handleNavigateToHome = () => {
-    if (onBackToDashboard) {
-      onBackToDashboard();
-    }
+    if (onBackToDashboard) onBackToDashboard();
   };
 
   const renderDataSourceCard = (source) => {
@@ -215,12 +173,27 @@ const DataConnectionPage = ({
         </ExcelUploader>
       );
     }
+    
     return (
       <div key={source.id} onClick={() => handleCardClick(source.id)} style={{ cursor: 'pointer' }}>
         {cardContent}
       </div>
     );
   };
+
+  if (isLoading) {
+    return (
+      <div>
+        <Navbar sidebarOpen={sidebarOpen} />
+        <div className="dataconnection-page">
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <FiLoader className="spinner" size={40} />
+            <p>Loading saved data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -229,11 +202,8 @@ const DataConnectionPage = ({
         setActiveTab={setActiveTab} 
         sidebarOpen={sidebarOpen}
         toggleSidebar={toggleSidebar}
-        onNavigateToDataConnection={onNavigateToDataConnection}
+        onNavigateToDataConnection={() => {}}
         onNavigateToHome={handleNavigateToHome}
-        onNavigateToWorkspace={onNavigateToWorkspace}
-        onNavigateToFavourites={onNavigateToFavourites}
-        onNavigateToReportBuilder={onNavigateToReportBuilder}
       />
       <Navbar sidebarOpen={sidebarOpen} />
       <div className={`dataconnection-page ${sidebarOpen ? "open" : "closed"}`}>
@@ -241,15 +211,13 @@ const DataConnectionPage = ({
           <button className="back-button" onClick={onBackToDashboard}>
             <FiArrowLeft size={18} /> Back to Dashboard
           </button>
-
           <h1 className="dataconnection-title">Add data to start building a report</h1>
-
           <div className="datasources-grid">
             {dataSources.map(source => renderDataSourceCard(source))}
           </div>
         </div>
 
-        {uploadedData && (
+        {uploadedData && uploadedData.length > 0 && (
           <DataPreview 
             data={uploadedData}
             fileName={uploadedFileName}

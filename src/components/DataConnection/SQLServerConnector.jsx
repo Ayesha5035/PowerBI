@@ -1,5 +1,6 @@
 // src/components/DataConnection/SQLServerConnector.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import io from 'socket.io-client';
 import { FiDatabase, FiCheck, FiX, FiLoader, FiRefreshCw, FiTable, FiSave, FiInfo } from 'react-icons/fi';
 import './SQLServerConnector.css';
 
@@ -16,16 +17,27 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
   
   const [query, setQuery] = useState('SELECT TOP 100 * FROM your_table_name');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [previewData, setPreviewData] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [tables, setTables] = useState([]);
-  const [showTableSelector, setShowTableSelector] = useState(false);
   const [executing, setExecuting] = useState(false);
-  const [queryResult, setQueryResult] = useState(null);
-  
-  // ✅ NEW: State for collapsible tips
   const [showFullTips, setShowFullTips] = useState(false);
+  const [socket, setSocket] = useState(null);
+  const [realtimeData, setRealtimeData] = useState([]);
+
+  useEffect(() => {
+    const newSocket = io('http://localhost:5000');
+    setSocket(newSocket);
+    
+    newSocket.on('realtime-data-update', (data) => {
+      console.log('Real-time update received:', data);
+      setRealtimeData(prev => [...prev, ...data.newRecords]);
+    });
+    
+    return () => newSocket.disconnect();
+  }, []);
 
   const handleConfigChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -79,8 +91,6 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
       const result = await response.json();
       if (result.success) {
         setTables(result.tables);
-      } else {
-        console.error('Error loading tables:', result.error);
       }
     } catch (error) {
       console.error('Error loading tables:', error);
@@ -103,7 +113,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
         body: JSON.stringify({ 
           ...connectionConfig,
           query: query,
-          limit: 500
+          limit: 10000
         })
       });
       const result = await response.json();
@@ -111,7 +121,6 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
       if (result.success) {
         if (result.isSelect && result.data) {
           setPreviewData(result.data);
-          setQueryResult(result.data);
           setConnectionStatus({ type: 'success', message: `Query returned ${result.data.length} rows` });
         } else if (!result.isSelect) {
           setConnectionStatus({ type: 'success', message: `Query executed. ${result.rowsAffected?.[0] || 0} rows affected.` });
@@ -126,9 +135,8 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
   };
 
   const loadTableData = async (tableName) => {
-    const newQuery = `SELECT TOP 100 * FROM [${tableName}]`;
+    const newQuery = `SELECT * FROM [${tableName}]`;
     setQuery(newQuery);
-    setShowTableSelector(false);
     
     setExecuting(true);
     setConnectionStatus({ type: 'loading', message: `Loading ${tableName}...` });
@@ -140,14 +148,13 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
         body: JSON.stringify({ 
           ...connectionConfig,
           query: newQuery,
-          limit: 500
+          limit: 10000
         })
       });
       const result = await response.json();
       
       if (result.success && result.data) {
         setPreviewData(result.data);
-        setQueryResult(result.data);
         setConnectionStatus({ type: 'success', message: `Loaded ${result.data.length} rows from ${tableName}` });
       } else {
         setConnectionStatus({ type: 'error', message: result.error });
@@ -158,37 +165,73 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
     setExecuting(false);
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (previewData && previewData.length > 0) {
+      setIsImporting(true);
       const fileName = `sql_${connectionConfig.database}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
-      onConnect(previewData, fileName);
-      onClose();
+      
+      try {
+        // 1. Save to PostgreSQL database
+        const saveResponse = await fetch('http://localhost:5000/api/save-to-database', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            data: previewData,
+            fileName: fileName,
+            source: 'sqlserver'
+          })
+        });
+        
+        const saveResult = await saveResponse.json();
+        
+        if (saveResult.success) {
+          // 2. Start real-time sync with the user's credentials
+          const syncResponse = await fetch('http://localhost:5000/api/start-realtime-sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              syncInterval: 3000,
+              tableName: 'FYP',
+              connectionConfig: {
+                server: connectionConfig.server,
+                database: connectionConfig.database,
+                username: connectionConfig.username,
+                password: connectionConfig.password,
+                port: connectionConfig.port,
+                encrypt: connectionConfig.encrypt,
+                trustCert: connectionConfig.trustCert
+              }
+            })
+          });
+          
+          const syncResult = await syncResponse.json();
+          
+          if (syncResult.success) {
+            console.log('Real-time sync started successfully');
+          }
+          
+          onConnect(previewData, fileName);
+          onClose();
+          alert(`Successfully imported ${previewData.length} rows! Real-time sync is now active.`);
+        } else {
+          alert('Failed to save to database');
+        }
+      } catch (error) {
+        console.error('Import error:', error);
+        alert('Failed to import data: ' + error.message);
+      }
+      setIsImporting(false);
     } else {
       alert('No data to import. Please execute a query first.');
     }
   };
 
-  // ✅ Tips content
   const tipsSummary = "For default instance: use computer name or IP";
   const tipsFull = [
     "For default instance: use computer name or IP (e.g., FAROOQ or localhost)",
     "For named instance: use COMPUTER\\INSTANCE (e.g., FAROOQ\\SQLEXPRESS)",
     "If using named instance, ensure SQL Browser service is running"
   ];
-
-  // Helper function to format cell values
-  const formatCellValue = (val) => {
-    if (val === null || val === undefined) {
-      return 'NULL';
-    }
-    if (typeof val === 'object') {
-      return JSON.stringify(val).slice(0, 100);
-    }
-    if (typeof val === 'string') {
-      return val.length > 100 ? val.slice(0, 100) + '...' : val;
-    }
-    return String(val);
-  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -211,9 +254,8 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
                 value={connectionConfig.server}
                 onChange={handleConfigChange}
               />
-              {/* ✅ NEW: Collapsible Tips with Read More */}
               <div className="tips-section">
-                <div className="tips-header" onClick={() => setShowFullTips(!showFullTips)}>
+                <div className="tips-header">
                   <FiInfo className="tips-icon" />
                   <span className="tips-summary">💡 Tips: {tipsSummary}</span>
                   {!showFullTips && (
@@ -287,9 +329,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
                 value={connectionConfig.port}
                 onChange={handleConfigChange}
               />
-              <small className="form-hint">
-                Default is 1433. Only needed for direct connection (without instance name)
-              </small>
+              <small className="form-hint">Default is 1433</small>
             </div>
             
             <div className="form-group half">
@@ -302,7 +342,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
                     checked={connectionConfig.encrypt}
                     onChange={handleConfigChange}
                   />
-                  Enable Encryption (for Azure/remote)
+                  Enable Encryption
                 </label>
                 <label>
                   <input
@@ -343,10 +383,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
                 <div className="table-selector">
                   <label>Quick Select Table</label>
                   <div className="selector-wrapper">
-                    <select 
-                      onChange={(e) => loadTableData(e.target.value)}
-                      defaultValue=""
-                    >
+                    <select onChange={(e) => loadTableData(e.target.value)} defaultValue="">
                       <option value="">-- Select a table to preview --</option>
                       {tables.map((table, idx) => (
                         <option key={idx} value={table.TABLE_NAME}>
@@ -365,20 +402,13 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
                   className="query-input"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="SELECT TOP 100 * FROM your_table"
+                  placeholder="SELECT * FROM your_table"
                   rows={5}
                   spellCheck={false}
                 />
-                <small className="form-hint">
-                  💡 Tips: Use SELECT TOP 100 for preview, be careful with UPDATE/DELETE
-                </small>
               </div>
               
-              <button 
-                className="execute-btn" 
-                onClick={executeQuery}
-                disabled={executing}
-              >
+              <button className="execute-btn" onClick={executeQuery} disabled={executing}>
                 {executing ? <FiLoader className="spinner" /> : <FiRefreshCw />}
                 {executing ? 'Executing...' : 'Execute Query'}
               </button>
@@ -426,9 +456,10 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
           <button 
             className="import-btn" 
             onClick={handleImport}
-            disabled={!previewData || previewData.length === 0}
+            disabled={!previewData || previewData.length === 0 || isImporting}
           >
-            <FiSave /> Import Data ({previewData?.length || 0} rows)
+            {isImporting ? <FiLoader className="spinner" /> : <FiSave />}
+            {isImporting ? 'Importing...' : `Import Data (${previewData?.length || 0} rows)`}
           </button>
         </div>
       </div>
