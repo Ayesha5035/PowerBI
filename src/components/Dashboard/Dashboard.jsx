@@ -7,13 +7,16 @@ import { FaPlus, FaFileAlt, FaClock, FaFolderOpen, FaChartLine, FaHeart } from "
 import "./Dashboard.css";
 
 function Dashboard({ 
+  sidebarOpen,           // ← ADD THIS
+  toggleSidebar,         // ← ADD COMMA HERE (fixed)
   onNavigateToDataConnection,
   onNavigateToWorkspace,
   onNavigateToFavourites,
   onNavigateToReportBuilder
 }) {
+  // ✅ ADD THIS - missing activeTab state
   const [activeTab, setActiveTab] = useState("home");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  
   const [recentReports, setRecentReports] = useState([]);
 
   // Load recent reports from localStorage when page loads
@@ -26,10 +29,6 @@ function Dashboard({
     if (savedReports) {
       setRecentReports(JSON.parse(savedReports));
     }
-  };
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
   };
 
   const handleNewReport = () => {
@@ -113,7 +112,7 @@ function Dashboard({
           />
           <Card 
             title="Favourites"
-            icon=""
+            icon="❤️"
             description="Your most used reports and dashboards"
             buttonText="Open Favourites →"
             onButtonClick={handleOpenFavourites}

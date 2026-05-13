@@ -9,9 +9,16 @@ import {
 } from 'react-icons/fi';
 import "./ReportBuilder.css";
 
-const ReportBuilder = ({ onBackToDashboard }) => {
+const ReportBuilder = ({ 
+  onBackToDashboard,
+  sidebarOpen,          
+  toggleSidebar,
+  onNavigateToDataConnection,
+  onNavigateToWorkspace,
+  onNavigateToFavourites,
+  onNavigateToReportBuilder
+}) => {
   const [activeTab, setActiveTab] = useState("reports");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [charts, setCharts] = useState([]);
   const [selectedChartId, setSelectedChartId] = useState(null);
   const [expandedSections, setExpandedSections] = useState({
@@ -20,8 +27,6 @@ const ReportBuilder = ({ onBackToDashboard }) => {
     visualizations: true,
     filters: true
   });
-
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   // Machine monitoring data fields
   const dataFields = [
@@ -84,7 +89,7 @@ const ReportBuilder = ({ onBackToDashboard }) => {
     }
   };
 
-  // Sample data for chart preview (replace with real data later)
+  // Sample data for chart preview
   const getSampleChartData = (chartType) => {
     const data = [
       { time: "10:00", temperature: 72, pressure: 4.2, speed: 115, efficiency: 94 },
@@ -103,15 +108,17 @@ const ReportBuilder = ({ onBackToDashboard }) => {
         setActiveTab={setActiveTab}
         sidebarOpen={sidebarOpen}
         toggleSidebar={toggleSidebar}
-        onNavigateToDataConnection={() => { }}
+        onNavigateToDataConnection={onNavigateToDataConnection}
         onNavigateToHome={handleNavigateToHome}
+        onNavigateToWorkspace={onNavigateToWorkspace}
+        onNavigateToFavourites={onNavigateToFavourites}
+        onNavigateToReportBuilder={onNavigateToReportBuilder}
       />
       <Navbar sidebarOpen={sidebarOpen} />
 
       <div className={`reportbuilder-page ${sidebarOpen ? "open" : "closed"}`}>
         {/* Top Navigation Bar */}
         <div className="reportbuilder-topbar">
-
           <div className="topbar-actions">
             <button className="topbar-action-btn">💾 Save</button>
             <button className="topbar-action-btn">📥 Export</button>

@@ -12,9 +12,17 @@ import {
 } from 'react-icons/fi';
 import "./DataConnectionPage.css";
 
-const DataConnectionPage = ({ onBackToDashboard }) => {
+const DataConnectionPage = ({ 
+  onBackToDashboard,
+  sidebarOpen,          
+  toggleSidebar,
+  onNavigateToDataConnection,
+  onNavigateToWorkspace,
+  onNavigateToFavourites,
+  onNavigateToReportBuilder
+}) => {
   const [activeTab, setActiveTab] = useState("create");
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 768);
+  
   // State for uploaded data preview
   const [uploadedData, setUploadedData] = useState(null);
   const [uploadedFileName, setUploadedFileName] = useState(null);
@@ -28,19 +36,66 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
   const [editingFileName, setEditingFileName] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+  // ========== FUNCTION: Save to Workspace ==========
+  const saveToWorkspace = (data, type, name, details = {}) => {
+    const currentWorkspaceId = localStorage.getItem("currentWorkspaceId");
+    
+    if (!currentWorkspaceId) {
+      console.error("No active workspace found");
+      alert("No workspace selected. Please go to Workspace page first.");
+      return;
+    }
+    
+    const savedWorkspaces = localStorage.getItem("workspaces");
+    if (!savedWorkspaces) {
+      console.error("No workspaces found");
+      alert("No workspaces found. Please create a workspace first.");
+      return;
+    }
+    
+    let workspaces = JSON.parse(savedWorkspaces);
+    const workspaceIndex = workspaces.findIndex(w => w.id === currentWorkspaceId);
+    
+    if (workspaceIndex === -1) {
+      console.error("Current workspace not found");
+      alert("Current workspace not found.");
+      return;
+    }
+    
+    const newItem = {
+      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      name: name,
+      type: type,
+      status: "connected",
+      lastRefreshed: new Date().toLocaleString(),
+      rows: data.length,
+      icon: type,
+      ...details
+    };
+    
+    workspaces[workspaceIndex].items = workspaces[workspaceIndex].items || [];
+    workspaces[workspaceIndex].items.push(newItem);
+    
+    localStorage.setItem("workspaces", JSON.stringify(workspaces));
+    window.dispatchEvent(new Event("workspaceUpdate"));
+    
+    console.log(`✅ Saved to workspace: ${workspaces[workspaceIndex].name} (${type})`);
   };
 
   // Callback when Excel/CSV upload is successful
   const handleFileUpload = (parsedData, fileName) => {
     console.log(`✅ File uploaded: ${fileName}`);
     console.log(`📊 Data rows: ${parsedData.length}`);
-    console.log(`📋 Column headers:`, Object.keys(parsedData[0] || {}));
     
     setUploadedData(parsedData);
     setUploadedFileName(fileName);
     
+    let fileType = "excel";
+    if (fileName.toLowerCase().endsWith(".csv")) {
+      fileType = "csv";
+    }
+    
+    saveToWorkspace(parsedData, fileType, fileName);
     alert(`Successfully uploaded "${fileName}" with ${parsedData.length} rows of data!`);
   };
   
@@ -51,6 +106,10 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
     
     setUploadedData(data);
     setUploadedFileName(sourceName);
+    
+    saveToWorkspace(data, "sql", sourceName, {
+      server: "SQL Server Connection"
+    });
     
     alert(`Successfully imported ${data.length} rows from SQL Server!`);
   };
@@ -63,6 +122,7 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
     setUploadedData(data);
     setUploadedFileName(fileName);
     
+    saveToWorkspace(data, "manual", fileName);
     alert(`Successfully saved ${data.length} rows of manual data!`);
   };
   
@@ -79,7 +139,7 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
     setUploadedFileName(null);
   };
   
-  // Handle edit data - opens ManualEntry with existing data
+  // Handle edit data
   const handleEditData = () => {
     setEditingData(uploadedData);
     setEditingFileName(uploadedFileName);
@@ -93,7 +153,6 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
     if (sourceId === 'sqlserver') {
       setShowSQLModal(true);
     } else if (sourceId === 'paste') {
-       console.log('📝 Opening Manual Entry modal'); 
       setShowManualModal(true);
     } else {
       alert(`Connect to ${sourceId}`);
@@ -156,7 +215,6 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
         </ExcelUploader>
       );
     }
-     console.log('Rendering card for:', source.id, source.name);
     return (
       <div key={source.id} onClick={() => handleCardClick(source.id)} style={{ cursor: 'pointer' }}>
         {cardContent}
@@ -171,12 +229,14 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
         setActiveTab={setActiveTab} 
         sidebarOpen={sidebarOpen}
         toggleSidebar={toggleSidebar}
-        onNavigateToDataConnection={() => {}}
+        onNavigateToDataConnection={onNavigateToDataConnection}
         onNavigateToHome={handleNavigateToHome}
+        onNavigateToWorkspace={onNavigateToWorkspace}
+        onNavigateToFavourites={onNavigateToFavourites}
+        onNavigateToReportBuilder={onNavigateToReportBuilder}
       />
       <Navbar sidebarOpen={sidebarOpen} />
       <div className={`dataconnection-page ${sidebarOpen ? "open" : "closed"}`}>
-        {/* Container for everything except the preview */}
         <div className="dataconnection-container">
           <button className="back-button" onClick={onBackToDashboard}>
             <FiArrowLeft size={18} /> Back to Dashboard
@@ -187,12 +247,8 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
           <div className="datasources-grid">
             {dataSources.map(source => renderDataSourceCard(source))}
           </div>
-
-          
-          
         </div>
 
-        {/* Data Preview Component – placed OUTSIDE the container */}
         {uploadedData && (
           <DataPreview 
             data={uploadedData}
@@ -204,7 +260,6 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
         )}
       </div>
       
-      {/* SQL Server Modal */}
       {showSQLModal && (
         <SQLServerConnector 
           onConnect={handleSQLImport}
@@ -212,7 +267,6 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
         />
       )}
       
-      {/* Manual Entry Modal (for creating new data) */}
       {showManualModal && (
         <ManualEntry 
           onSave={handleManualSave}
@@ -220,7 +274,6 @@ const DataConnectionPage = ({ onBackToDashboard }) => {
         />
       )}
       
-      {/* Edit Modal (for editing existing data) */}
       {showEditModal && (
         <ManualEntry 
           onSave={handleManualSave}
