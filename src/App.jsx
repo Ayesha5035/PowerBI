@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Dashboard from "./components/Dashboard/Dashboard";
 import DataConnectionPage from "./components/DataConnection/DataConnectionPage";
 import WorkspacePage from "./components/Workspace/WorkspacePage";
@@ -8,7 +8,29 @@ import ReportBuilder from "./components/ReportBuilder/ReportBuilder";
 import './App.css';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('dashboard');
+ const [currentPage, setCurrentPage] = useState(() => {
+  const savedPage = localStorage.getItem("currentPage");
+  return savedPage || 'dashboard';
+});
+  // ========== SINGLE SIDEBAR STATE FOR ALL PAGES ==========
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    // Load saved state from localStorage
+    const saved = localStorage.getItem("sidebarOpen");
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  // Save sidebar state whenever it changes
+  useEffect(() => {
+    localStorage.setItem("sidebarOpen", JSON.stringify(sidebarOpen));
+  }, [sidebarOpen]);
+  // Save current page whenever it changes
+useEffect(() => {
+  localStorage.setItem("currentPage", currentPage);
+}, [currentPage]);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   // NEW: State for uploaded data
   const [uploadedData, setUploadedData] = useState(null);
@@ -38,7 +60,7 @@ function App() {
     switch (currentPage) {
       case 'dashboard':
         return (
-          <Dashboard
+          <Dashboard 
             onNavigateToDataConnection={goToDataConnection}
             onNavigateToWorkspace={goToWorkspace}
             onNavigateToFavourites={goToFavourites}
@@ -47,14 +69,13 @@ function App() {
         );
       case 'dataconnection':
         return (
-          <DataConnectionPage
+          <DataConnectionPage 
             onBackToDashboard={goToDashboard}
-            onDataUpload={handleDataUpload}  // NEW: Pass this prop
           />
         );
       case 'workspace':
         return (
-          <WorkspacePage
+          <WorkspacePage 
             onBackToDashboard={goToDashboard}
             onNavigateToDataConnection={goToDataConnection}
             onNavigateToWorkspace={goToWorkspace}
@@ -64,7 +85,7 @@ function App() {
         );
       case 'favourites':
         return (
-          <FavouritesPage
+          <FavouritesPage 
             onBackToDashboard={goToDashboard}
             onNavigateToDataConnection={goToDataConnection}
             onNavigateToWorkspace={goToWorkspace}
@@ -74,16 +95,13 @@ function App() {
         );
       case 'reportbuilder':
         return (
-          <ReportBuilder
+          <ReportBuilder 
             onBackToDashboard={goToDashboard}
-            uploadedData={uploadedData}        // NEW: Pass data to ReportBuilder
-            uploadedFileName={uploadedFileName}  // NEW: Pass filename
-            uploadedColumns={uploadedColumns}    // NEW: Pass columns
           />
         );
       default:
         return (
-          <Dashboard
+          <Dashboard 
             onNavigateToDataConnection={goToDataConnection}
             onNavigateToWorkspace={goToWorkspace}
             onNavigateToFavourites={goToFavourites}

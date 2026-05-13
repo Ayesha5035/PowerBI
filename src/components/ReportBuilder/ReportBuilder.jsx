@@ -15,80 +15,9 @@ import {
 } from 'recharts';
 import "./ReportBuilder.css";
 
-// Item type constant for drag and drop
-const ItemTypes = {
-  FIELD: 'field'
-};
-
-// Draggable Field Component
-const DraggableField = ({ field }) => {
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: ItemTypes.FIELD,
-    item: { field },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
-    }),
-  }));
-
-  return (
-    <div
-      ref={drag}
-      className={`field-item ${isDragging ? 'dragging' : ''}`}
-      style={{ opacity: isDragging ? 0.5 : 1, cursor: 'grab' }}
-      draggable="true"
-    >
-      <span className="field-icon" style={{ color: field.color }}>
-        {field.icon}
-      </span>
-      <span className="field-name">{field.name}</span>
-      <span className="field-type">{field.type}</span>
-    </div>
-  );
-};
-
-// Drop Zone Component for Axis
-const DropZone = ({ label, value, onDrop, onClear, icon }) => {
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: ItemTypes.FIELD,
-    drop: (item) => onDrop(item.field),
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver(),
-    }),
-  }));
-
-  return (
-    <div className="axis-field">
-      <label>{label}</label>
-      <div
-        ref={drop}
-        className={`axis-dropzone ${isOver ? 'drag-over' : ''} ${value ? 'filled' : ''}`}
-      >
-        {value ? (
-          <>
-            <span className="axis-value">📊 {value}</span>
-            <button
-              className="axis-clear"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClear();
-              }}
-            >
-              ✕
-            </button>
-          </>
-        ) : (
-          <span className="axis-placeholder">
-            {icon} Drop field here
-          </span>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const ReportBuilder = ({ onBackToDashboard, uploadedData, uploadedFileName, uploadedColumns }) => {
+const ReportBuilder = ({ onBackToDashboard }) => {
   const [activeTab, setActiveTab] = useState("reports");
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 768);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [charts, setCharts] = useState([]);
   const [selectedChartId, setSelectedChartId] = useState(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -99,24 +28,6 @@ const ReportBuilder = ({ onBackToDashboard, uploadedData, uploadedFileName, uplo
     visualizations: true,
     filters: true
   });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredFields, setFilteredFields] = useState([]);
-  const [dataSourceFilter, setDataSourceFilter] = useState(true);
-  const [showFilterModal, setShowFilterModal] = useState(false);
-  const [activeFilters, setActiveFilters] = useState([]);
-  const [isReadingView, setIsReadingView] = useState(false);
-
-  // Panel toggle states
-  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
-  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
-
-  // Filter states
-  const [columnFilters, setColumnFilters] = useState([]);
-  const [valueFilters, setValueFilters] = useState({});
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
-  const [showValueFilterModal, setShowValueFilterModal] = useState(false);
-  const [maxRows, setMaxRows] = useState(1000);
-  const [selectedValueColumn, setSelectedValueColumn] = useState(null);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
@@ -222,246 +133,42 @@ const ReportBuilder = ({ onBackToDashboard, uploadedData, uploadedFileName, uplo
   };
 
   const handleNavigateToHome = () => {
-    if (onBackToDashboard) onBackToDashboard();
-  };
-
-  const saveDashboard = () => {
-    if (!hasData) {
-      alert("No data loaded. Please upload data first.");
-      return;
-    }
-
-    const dashboard = {
-      id: Date.now(),
-      name: `Dashboard_${new Date().toLocaleDateString()}`,
-      fileName: uploadedFileName,
-      columns: uploadedColumns,
-      charts: charts,
-      savedAt: new Date().toISOString()
-    };
-
-    const savedDashboards = JSON.parse(localStorage.getItem('analytics_dashboards') || '[]');
-    savedDashboards.push(dashboard);
-    localStorage.setItem('analytics_dashboards', JSON.stringify(savedDashboards));
-
-    alert(`Dashboard saved successfully!`);
-  };
-
-  const loadSavedDashboards = () => {
-    const saved = JSON.parse(localStorage.getItem('analytics_dashboards') || '[]');
-    if (saved.length === 0) {
-      alert("No saved dashboards found.");
-      return;
-    }
-
-    const dashboardNames = saved.map((d, i) => `${i + 1}. ${d.name} (${d.fileName})`).join('\n');
-    const selection = prompt(`Select dashboard to load:\n${dashboardNames}\n\nEnter number (1-${saved.length}):`);
-
-    if (selection && !isNaN(selection)) {
-      const index = parseInt(selection) - 1;
-      if (index >= 0 && index < saved.length) {
-        const dashboard = saved[index];
-        setCharts(dashboard.charts);
-        alert(`Loaded "${dashboard.name}"`);
-      }
+    if (onBackToDashboard) {
+      onBackToDashboard();
     }
   };
 
-  const clearAllDashboards = () => {
-    if (confirm("⚠️ This will delete ALL saved dashboards. Are you sure?")) {
-      localStorage.removeItem('analytics_dashboards');
-      alert("All saved dashboards cleared.");
-    }
-  };
-
-  // Get filtered data for a specific chart
-  const getChartDataForChart = (chart) => {
-    if (!hasData) return [];
-
-    let filtered = [...uploadedData];
-
-    const chartFilters = chart.config.filters || { minMax: {}, dateRange: {} };
-    const yAxisColumn = chart.config.yAxis;
-    const filterConfig = chartFilters.minMax[yAxisColumn];
-
-    if (filterConfig) {
-      const { min, max } = filterConfig;
-      if (min !== '' && min !== undefined && min !== null) {
-        filtered = filtered.filter(row => {
-          const val = Number(row[yAxisColumn]);
-          return !isNaN(val) && val >= Number(min);
-        });
-      }
-      if (max !== '' && max !== undefined && max !== null) {
-        filtered = filtered.filter(row => {
-          const val = Number(row[yAxisColumn]);
-          return !isNaN(val) && val <= Number(max);
-        });
-      }
-    }
-
-    const { start, end } = chartFilters.dateRange;
-    if (start || end) {
-      const dateColumn = uploadedColumns?.find(col =>
-        col.toLowerCase().includes('date') ||
-        col.toLowerCase().includes('time') ||
-        col.toLowerCase().includes('timestamp')
-      );
-
-      if (dateColumn) {
-        filtered = filtered.filter(row => {
-          const rowDate = new Date(row[dateColumn]);
-          if (isNaN(rowDate.getTime())) return true;
-          if (start) {
-            const startDate = new Date(start);
-            if (!isNaN(startDate.getTime()) && startDate > rowDate) return false;
-          }
-          if (end) {
-            const endDate = new Date(end);
-            if (!isNaN(endDate.getTime()) && endDate < rowDate) return false;
-          }
-          return true;
-        });
-      }
-    }
-
-    return filtered.slice(0, maxRows);
-  };
-
-  const currentChart = charts.find(c => c.id === selectedChartId);
-
-  // Render chart based on type
-  const renderChart = (chart) => {
-    const chartSpecificData = getChartDataForChart(chart);
-
-    if (!hasData || chartSpecificData.length === 0) {
-      return (
-        <div className="chart-placeholder">
-          <p>No data available for this chart</p>
-          <small>Please adjust filters or upload data</small>
-        </div>
-      );
-    }
-
-    const { xAxis, yAxis } = chart.config;
-
-    const getPieDataForChart = () => {
-      const grouped = {};
-      chartSpecificData.forEach(row => {
-        const key = String(row[xAxis] || 'Other');
-        const value = Number(row[yAxis]) || 0;
-        if (!grouped[key]) grouped[key] = 0;
-        grouped[key] += value;
-      });
-      return Object.entries(grouped).map(([name, value]) => ({ name, value }));
-    };
-
-    const pieData = getPieDataForChart();
-    const kpiValue = chartSpecificData.reduce((sum, row) => sum + (Number(row[yAxis]) || 0), 0) / chartSpecificData.length;
-
-    switch (chart.type) {
-      case 'line':
-        return (
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartSpecificData}>
-              {chart.config.showGrid && <CartesianGrid strokeDasharray="3 3" />}
-              <XAxis dataKey={xAxis} angle={-45} textAnchor="end" height={60} />
-              <YAxis />
-              <Tooltip />
-              {chart.config.showLegend && <Legend />}
-              <Line
-                type="monotone"
-                dataKey={yAxis}
-                stroke={chart.config.color || "#667eea"}
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        );
-
-      case 'bar':
-        return (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartSpecificData}>
-              {chart.config.showGrid && <CartesianGrid strokeDasharray="3 3" />}
-              <XAxis dataKey={xAxis} angle={-45} textAnchor="end" height={60} />
-              <YAxis />
-              <Tooltip />
-              {chart.config.showLegend && <Legend />}
-              <Bar dataKey={yAxis} fill={chart.config.color || "#48bb78"} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        );
-
-      case 'pie':
-        return (
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={true}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        );
-
-      case 'kpi':
-        const formattedValue = typeof kpiValue === 'number' ? kpiValue.toFixed(2) : kpiValue;
-        return (
-          <div className="kpi-card">
-            <div className="kpi-icon"><FiActivity size={48} color="#01b8aa" /></div>
-            <div className="kpi-number">{formattedValue}</div>
-            <div className="kpi-label">Average {yAxis}</div>
-            <div className="kpi-footer">Based on {chartSpecificData.length} records</div>
-          </div>
-        );
-
-      default:
-        return <div>Chart type not supported</div>;
-    }
+  // Sample data for chart preview (replace with real data later)
+  const getSampleChartData = (chartType) => {
+    const data = [
+      { time: "10:00", temperature: 72, pressure: 4.2, speed: 115, efficiency: 94 },
+      { time: "11:00", temperature: 74, pressure: 4.3, speed: 118, efficiency: 95 },
+      { time: "12:00", temperature: 73, pressure: 4.1, speed: 120, efficiency: 96 },
+      { time: "13:00", temperature: 75, pressure: 4.4, speed: 122, efficiency: 95 },
+      { time: "14:00", temperature: 74, pressure: 4.2, speed: 119, efficiency: 94 }
+    ];
+    return data;
   };
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div>
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          sidebarOpen={sidebarOpen}
-          toggleSidebar={toggleSidebar}
-          onNavigateToDataConnection={() => { }}
-          onNavigateToHome={handleNavigateToHome}
-        />
-        <Navbar sidebarOpen={sidebarOpen} />
+    <div>
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        sidebarOpen={sidebarOpen}
+        toggleSidebar={toggleSidebar}
+        onNavigateToDataConnection={() => { }}
+        onNavigateToHome={handleNavigateToHome}
+      />
+      <Navbar sidebarOpen={sidebarOpen} />
 
-        <div className={`reportbuilder-page ${sidebarOpen ? "open" : "closed"}`}>
-          {/* Top action bar */}
-          <div className="reportbuilder-topbar">
-            <div className="topbar-actions">
-              <button className="topbar-action-btn" onClick={saveDashboard}>
-                <FiSave size={14} /> Save Dashboard
-              </button>
-              <button className="topbar-action-btn" onClick={loadSavedDashboards}>
-                <FiDownload size={14} /> Load Dashboard
-              </button>
-              <button className="topbar-action-btn" onClick={clearAllDashboards}>
-                🗑️ Clear Saved
-              </button>
-            </div>
+      <div className={`reportbuilder-page ${sidebarOpen ? "open" : "closed"}`}>
+        {/* Top Navigation Bar */}
+        <div className="reportbuilder-topbar">
+
+          <div className="topbar-actions">
+            <button className="topbar-action-btn">💾 Save</button>
+            <button className="topbar-action-btn">📥 Export</button>
           </div>
 
           {/* Show data info if uploaded */}
