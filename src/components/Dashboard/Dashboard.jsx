@@ -84,7 +84,7 @@ function Dashboard({
         {/* Header */}
         <div className="dashboard-header">
           <div>
-            <h1>Welcome back, User! 👋</h1>
+            <h1>Welcome back, User! </h1>
           </div>
           <button className="new-report" onClick={handleNewReport}>
             <FaPlus /> New Report
@@ -113,7 +113,7 @@ function Dashboard({
           />
           <Card 
             title="Favourites"
-            icon="❤️"
+            icon=""
             description="Your most used reports and dashboards"
             buttonText="Open Favourites →"
             onButtonClick={handleOpenFavourites}

@@ -117,6 +117,7 @@
 
 /* Table container with horizontal scroll */
 .table-container {
+    width: 100%;
   overflow-x: auto;
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);

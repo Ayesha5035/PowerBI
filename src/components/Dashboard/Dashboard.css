@@ -34,7 +34,8 @@
 @media (max-width: 768px) {
   .dashboard.open,
   .dashboard.closed {
-    margin-left: 70px;
+    margin-left: 0;
+    padding-left: 50px;
   }
 
   .dashboard {
