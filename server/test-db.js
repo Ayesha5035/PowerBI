@@ -2,7 +2,7 @@ const path = require('path');
 // Load .env from parent directory (project root)
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const pool = require('./db/postgres');
+const { pool } = require('./db/postgres'); 
 const timescale = require('./db/timescale');
 const redis = require('./db/redis');
 
