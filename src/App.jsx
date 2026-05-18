@@ -5,13 +5,15 @@ import DataConnectionPage from "./components/DataConnection/DataConnectionPage";
 import WorkspacePage from "./components/Workspace/WorkspacePage";
 import FavouritesPage from "./components/Favourites/FavouritesPage";
 import ReportBuilder from "./components/ReportBuilder/ReportBuilder";
+import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 function App() {
- const [currentPage, setCurrentPage] = useState(() => {
-  const savedPage = localStorage.getItem("currentPage");
-  return savedPage || 'dashboard';
-});
+  const [currentPage, setCurrentPage] = useState(() => {
+    const savedPage = localStorage.getItem("currentPage");
+    return savedPage || 'dashboard';
+  });
+  
   // ========== SINGLE SIDEBAR STATE FOR ALL PAGES ==========
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     // Load saved state from localStorage
@@ -23,10 +25,11 @@ function App() {
   useEffect(() => {
     localStorage.setItem("sidebarOpen", JSON.stringify(sidebarOpen));
   }, [sidebarOpen]);
+  
   // Save current page whenever it changes
-useEffect(() => {
-  localStorage.setItem("currentPage", currentPage);
-}, [currentPage]);
+  useEffect(() => {
+    localStorage.setItem("currentPage", currentPage);
+  }, [currentPage]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -121,7 +124,36 @@ useEffect(() => {
     }
   };
 
-  return <div>{renderPage()}</div>;
+  return (
+    <>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+            borderRadius: '8px',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+      {renderPage()}
+    </>
+  );
 }
 
 export default App;

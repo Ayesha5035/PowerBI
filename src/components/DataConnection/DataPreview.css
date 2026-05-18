@@ -187,6 +187,17 @@
   background: var(--color-border);
   transform: translateY(-2px);
 }
+/* Add to DataPreview.css */
+.delete-btn {
+  background: var(--color-danger);
+  color: white;
+}
+
+.delete-btn:hover {
+  background: var(--color-danger-dark);
+  transform: translateY(-2px);
+  color: red;
+}
 
 /* Responsive */
 @media (max-width: 768px) {

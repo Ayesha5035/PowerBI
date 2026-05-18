@@ -1,0 +1,133 @@
+/* src/components/DataConnection/DatasetCard.css */
+.dataset-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--color-card-bg, white);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.dataset-card:hover {
+  border-color: var(--color-accent, #01b8aa);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.dataset-card.selected {
+  border-color: var(--color-accent, #01b8aa);
+  background: var(--color-accent-light, rgba(1, 184, 170, 0.05));
+  box-shadow: 0 2px 12px rgba(1, 184, 170, 0.15);
+}
+
+.dataset-card-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-light, rgba(1, 184, 170, 0.1));
+  border-radius: 10px;
+  color: var(--color-accent, #01b8aa);
+  flex-shrink: 0;
+}
+
+.dataset-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dataset-card-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1f2937);
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+.dataset-card-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.dataset-card-rows,
+.dataset-card-source,
+.dataset-card-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dataset-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dataset-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.view-btn {
+  background: var(--color-card-bg-alt, #f3f4f6);
+  color: var(--color-text-secondary, #4b5563);
+}
+
+.view-btn:hover {
+  background: var(--color-accent, #01b8aa);
+  color: rgb(87, 71, 180);
+}
+
+.delete-btn {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+.delete-btn:hover {
+  background: #dc2626;
+  color: white;
+}
+
+/* src/components/DataConnection/DatasetCard.css - Add this */
+
+.edit-btn {
+  background: var(--color-accent-light, rgba(1, 184, 170, 0.1));
+  color: var(--color-accent, #01b8aa);
+}
+
+.edit-btn:hover {
+  background: var(--color-accent, #01b8aa);
+  color: white;
+}
+@media (max-width: 768px) {
+  .dataset-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .dataset-card-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .dataset-card-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+}

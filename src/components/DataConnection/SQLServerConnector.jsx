@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import { FiDatabase, FiCheck, FiX, FiLoader, FiRefreshCw, FiTable, FiSave, FiInfo } from 'react-icons/fi';
 import './SQLServerConnector.css';
+import toast from 'react-hot-toast';
 
 const SQLServerConnector = ({ onConnect, onClose }) => {
   const [connectionConfig, setConnectionConfig] = useState({
@@ -10,7 +11,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
     database: '',
     username: '',
     password: '',
-    port: '1433',
+    port: '',
     encrypt: false,
     trustCert: true
   });
@@ -99,7 +100,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
 
   const executeQuery = async () => {
     if (!query.trim()) {
-      alert('Please enter a SQL query');
+      toast.error('Please enter a SQL query');
       return;
     }
     
@@ -171,7 +172,6 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
       const fileName = `sql_${connectionConfig.database}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
       
       try {
-        // 1. Save to PostgreSQL database
         const saveResponse = await fetch('http://localhost:5000/api/save-to-database', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -185,7 +185,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
         const saveResult = await saveResponse.json();
         
         if (saveResult.success) {
-          // 2. Start real-time sync with the user's credentials
+          // Start real-time sync after successful import
           const syncResponse = await fetch('http://localhost:5000/api/start-realtime-sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -197,7 +197,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
                 database: connectionConfig.database,
                 username: connectionConfig.username,
                 password: connectionConfig.password,
-                port: connectionConfig.port,
+                port: connectionConfig.port || '1433',
                 encrypt: connectionConfig.encrypt,
                 trustCert: connectionConfig.trustCert
               }
@@ -205,24 +205,22 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
           });
           
           const syncResult = await syncResponse.json();
+          console.log('Real-time sync response:', syncResult);
           
-          if (syncResult.success) {
-            console.log('Real-time sync started successfully');
-          }
-          
-          onConnect(previewData, fileName);
+          // Pass the data to parent
+          onConnect(previewData, fileName, saveResult.datasetId);
           onClose();
-          alert(`Successfully imported ${previewData.length} rows! Real-time sync is now active.`);
+          toast.success(`Successfully imported ${previewData.length} rows! Real-time sync is now active.`);
         } else {
-          alert('Failed to save to database');
+          toast.error('Failed to save to database');
         }
       } catch (error) {
         console.error('Import error:', error);
-        alert('Failed to import data: ' + error.message);
+        toast.error('Failed to import data: ' + error.message);
       }
       setIsImporting(false);
     } else {
-      alert('No data to import. Please execute a query first.');
+      toast.error('No data to import. Please execute a query first.');
     }
   };
 
@@ -321,7 +319,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
           
           <div className="form-row">
             <div className="form-group half">
-              <label>Port</label>
+              <label>Port (Optional)</label>
               <input
                 type="text"
                 name="port"
@@ -329,7 +327,9 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
                 value={connectionConfig.port}
                 onChange={handleConfigChange}
               />
-              <small className="form-hint">Default is 1433</small>
+              <small className="form-hint">
+                💡 Leave empty for default (1433). Only needed if your SQL Server uses a custom port.
+              </small>
             </div>
             
             <div className="form-group half">

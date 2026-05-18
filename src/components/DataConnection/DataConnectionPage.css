@@ -17,6 +17,76 @@
 .dataconnection-page.closed {
   margin-left: var(--sidebar-width-closed);
 }
+/* Add to DataConnectionPage.css */
+.datasets-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.refresh-btn {
+  padding: 6px 12px;
+  background: var(--color-card-bg-alt, #f3f4f6);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  color: #32a4e6;
+  background-color: #cee3f0;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: var(--color-accent, #01b8aa);
+  color: white;
+  border-color: var(--color-accent, #01b8aa);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* Add to DataConnectionPage.css */
+
+/* Datasets Section */
+.datasets-section {
+  margin-top: 32px;
+  padding: 24px;
+  background: var(--color-card-bg, white);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1));
+}
+
+.datasets-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: var(--color-text-primary, #1f2937);
+}
+
+.datasets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty-datasets {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-text-muted, #6b7280);
+  background: var(--color-card-bg-alt, #f9fafb);
+  border-radius: 12px;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 
 /* ========== RESPONSIVE DATA CONNECTION PAGE ========== */
 @media (max-width: 1024px) {
