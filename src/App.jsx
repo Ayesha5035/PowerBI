@@ -35,7 +35,10 @@ function App() {
     setSidebarOpen(!sidebarOpen);
   };
 
-  console.log("Current page:", currentPage);
+  // NEW: State for uploaded data
+  const [uploadedData, setUploadedData] = useState(null);
+  const [uploadedFileName, setUploadedFileName] = useState(null);
+  const [uploadedColumns, setUploadedColumns] = useState([]);
 
   // Navigation functions
   const goToDashboard = () => setCurrentPage('dashboard');
@@ -44,38 +47,38 @@ function App() {
   const goToFavourites = () => setCurrentPage('favourites');
   const goToReportBuilder = () => setCurrentPage('reportbuilder');
 
+  // NEW: Handle data upload from DataConnectionPage
+  const handleDataUpload = (data, fileName) => {
+    console.log("Data received in App:", { rows: data?.length, fileName });
+    setUploadedData(data);
+    setUploadedFileName(fileName);
+    if (data && data.length > 0) {
+      setUploadedColumns(Object.keys(data[0]));
+    }
+    // Automatically go to ReportBuilder after upload
+    setCurrentPage('reportbuilder');
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
         return (
           <Dashboard 
-            sidebarOpen={sidebarOpen}
-            toggleSidebar={toggleSidebar}
             onNavigateToDataConnection={goToDataConnection}
             onNavigateToWorkspace={goToWorkspace}
             onNavigateToFavourites={goToFavourites}
             onNavigateToReportBuilder={goToReportBuilder}
           />
         );
-        
       case 'dataconnection':
         return (
           <DataConnectionPage 
-            sidebarOpen={sidebarOpen}
-            toggleSidebar={toggleSidebar}
             onBackToDashboard={goToDashboard}
-            onNavigateToDataConnection={goToDataConnection}
-            onNavigateToWorkspace={goToWorkspace}
-            onNavigateToFavourites={goToFavourites}
-            onNavigateToReportBuilder={goToReportBuilder}
           />
         );
-        
       case 'workspace':
         return (
           <WorkspacePage 
-            sidebarOpen={sidebarOpen}
-            toggleSidebar={toggleSidebar}
             onBackToDashboard={goToDashboard}
             onNavigateToDataConnection={goToDataConnection}
             onNavigateToWorkspace={goToWorkspace}
@@ -83,12 +86,9 @@ function App() {
             onNavigateToReportBuilder={goToReportBuilder}
           />
         );
-        
       case 'favourites':
         return (
           <FavouritesPage 
-            sidebarOpen={sidebarOpen}
-            toggleSidebar={toggleSidebar}
             onBackToDashboard={goToDashboard}
             onNavigateToDataConnection={goToDataConnection}
             onNavigateToWorkspace={goToWorkspace}
@@ -96,25 +96,15 @@ function App() {
             onNavigateToReportBuilder={goToReportBuilder}
           />
         );
-        
       case 'reportbuilder':
         return (
           <ReportBuilder 
-            sidebarOpen={sidebarOpen}
-            toggleSidebar={toggleSidebar}
             onBackToDashboard={goToDashboard}
-            onNavigateToDataConnection={goToDataConnection}
-            onNavigateToWorkspace={goToWorkspace}
-            onNavigateToFavourites={goToFavourites}
-            onNavigateToReportBuilder={goToReportBuilder}
           />
         );
-        
       default:
         return (
           <Dashboard 
-            sidebarOpen={sidebarOpen}
-            toggleSidebar={toggleSidebar}
             onNavigateToDataConnection={goToDataConnection}
             onNavigateToWorkspace={goToWorkspace}
             onNavigateToFavourites={goToFavourites}
