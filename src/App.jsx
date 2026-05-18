@@ -6,10 +6,6 @@ import DataConnectionPage from "./components/DataConnection/DataConnectionPage";
 import WorkspacePage from "./components/Workspace/WorkspacePage";
 import FavouritesPage from "./components/Favourites/FavouritesPage";
 import ReportBuilder from "./components/ReportBuilder/ReportBuilder";
-import Login from './pages/Login';
-import SignUp from './pages/SignUp';
-import AuthCallback from './pages/AuthCallback';
-import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
 // Smart ProtectedRoute - Checks auth on EVERY access
@@ -43,11 +39,11 @@ const NoCache = ({ children }) => {
 };
 
 function App() {
-  const [currentPage, setCurrentPage] = useState(() => {
-    const savedPage = localStorage.getItem("currentPage");
-    return savedPage || 'dashboard';
-  });
-  
+ const [currentPage, setCurrentPage] = useState(() => {
+  const savedPage = localStorage.getItem("currentPage");
+  return savedPage || 'dashboard';
+});
+  // ========== SINGLE SIDEBAR STATE FOR ALL PAGES ==========
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem("sidebarOpen");
     return saved !== null ? JSON.parse(saved) : true;
@@ -56,10 +52,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem("sidebarOpen", JSON.stringify(sidebarOpen));
   }, [sidebarOpen]);
-  
-  useEffect(() => {
-    localStorage.setItem("currentPage", currentPage);
-  }, [currentPage]);
+  // Save current page whenever it changes
+useEffect(() => {
+  localStorage.setItem("currentPage", currentPage);
+}, [currentPage]);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
@@ -96,26 +92,18 @@ function App() {
       case 'reportbuilder':
         return <ReportBuilder sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} onBackToDashboard={goToDashboard} onNavigateToDataConnection={goToDataConnection} onNavigateToWorkspace={goToWorkspace} onNavigateToFavourites={goToFavourites} onNavigateToReportBuilder={goToReportBuilder} uploadedData={uploadedData} uploadedFileName={uploadedFileName} uploadedColumns={uploadedColumns} />;
       default:
-        return <Dashboard sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} onNavigateToDataConnection={goToDataConnection} onNavigateToWorkspace={goToWorkspace} onNavigateToFavourites={goToFavourites} onNavigateToReportBuilder={goToReportBuilder} />;
+        return (
+          <Dashboard 
+            onNavigateToDataConnection={goToDataConnection}
+            onNavigateToWorkspace={goToWorkspace}
+            onNavigateToFavourites={goToFavourites}
+            onNavigateToReportBuilder={goToReportBuilder}
+          />
+        );
     }
   };
 
-  return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/*" element={
-            <ProtectedRoute>
-              {renderAppContent()}
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
-  );
+  return <div>{renderPage()}</div>;
 }
 
 export default App;

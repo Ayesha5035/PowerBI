@@ -44,11 +44,7 @@ const server = http.createServer(app);
 // Initialize WebSocket
 const io = initWebSocket(server);
 
-// ============================================
-// SQL SERVER CONNECTION (YOUR EXISTING CODE)
-// ============================================
-
-// Default SQL Server connection config
+// Default SQL Server connection config (will be overridden by user connections)
 const defaultSqlConfig = {
   user: process.env.SQL_USER || '',
   password: process.env.SQL_PASSWORD || '',
@@ -82,7 +78,7 @@ if (process.env.ENABLE_REAL_TIME === 'true') {
 // ============================================
 
 app.post('/api/start-realtime-sync', async (req, res) => {
-  const { syncInterval = 2000, tableName = 'FYP', connectionConfig, sessionId = 'default' } = req.body;
+  const { syncInterval = 3000, tableName = 'FYP', connectionConfig, sessionId = 'default' } = req.body;
   
   if (connectionConfig) {
     const sqlConfig = {
@@ -104,24 +100,26 @@ app.post('/api/start-realtime-sync', async (req, res) => {
       startTime: Date.now()
     });
     
+    // Update realtimeSync with these credentials
     realtimeSync.updateConfig(sqlConfig);
     realtimeSync.tableName = tableName;
   }
   
-  if (!realtimeSync.isRunning && activeConnections.size > 0) {
-    realtimeSync.syncIntervalMs = syncInterval;
-    await realtimeSync.start();
-    res.json({ 
-      success: true, 
-      message: `Real-time sync started. Interval: ${syncInterval}ms`,
-      tableName
-    });
-  } else if (realtimeSync.isRunning) {
-    res.json({ success: false, message: 'Sync already running' });
-  } else {
-    res.json({ success: false, message: 'No connection configuration provided' });
+  // Stop existing sync if running
+  if (realtimeSync.isRunning) {
+    realtimeSync.stop();
   }
+  
+  realtimeSync.syncIntervalMs = syncInterval;
+  await realtimeSync.start();
+  
+  res.json({ 
+    success: true, 
+    message: `Real-time sync started. Interval: ${syncInterval}ms`,
+    tableName
+  });
 });
+   
 
 app.post('/api/stop-realtime-sync', async (req, res) => {
   realtimeSync.stop();
@@ -158,7 +156,8 @@ app.get('/api/sync-status', async (req, res) => {
     lastSyncTime: realtimeSync.lastSyncTime,
     syncInterval: realtimeSync.syncIntervalMs,
     tableName: realtimeSync.tableName,
-    activeConnections: activeConnections.size
+    activeConnections: activeConnections.size,
+    currentDatasetId: realtimeSync.currentDatasetId
   });
 });
 
@@ -200,21 +199,64 @@ app.post('/api/save-to-database', async (req, res) => {
     
     const datasetId = result.rows[0].id;
     
-    for (const row of data) {
-      await pool.query(
-        'INSERT INTO sql_imported_data (dataset_id, data) VALUES ($1, $2)',
-        [datasetId, row]
-      );
+    // Batch insert for speed
+    for (let i = 0; i < data.length; i += 500) {
+      const batch = data.slice(i, i + 500);
+      const values = batch.map(row => `(${datasetId}, '${JSON.stringify(row).replace(/'/g, "''")}')`).join(',');
+      await pool.query(`
+        INSERT INTO sql_imported_data (dataset_id, data) VALUES ${values}
+      `);
     }
     
     res.json({ 
       success: true, 
       message: `Saved ${data.length} rows to database`,
-      datasetId 
+      datasetId
     });
     
   } catch (err) {
     console.error('Save error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Get ALL datasets
+app.get('/api/get-all-datasets', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, file_name, source, row_count, imported_at 
+      FROM imported_datasets 
+      ORDER BY imported_at DESC
+    `);
+    
+    console.log(`📊 Found ${result.rows.length} datasets in database`);
+    res.json({ success: true, datasets: result.rows });
+  } catch (err) {
+    console.error('Error getting datasets:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Get dataset data by ID
+app.post('/api/get-dataset-data', async (req, res) => {
+  const { datasetId } = req.body;
+  
+  if (!datasetId) {
+    return res.status(400).json({ success: false, error: 'Dataset ID required' });
+  }
+  
+  try {
+    const result = await pool.query(`
+      SELECT data FROM sql_imported_data 
+      WHERE dataset_id = $1 
+      ORDER BY id
+    `, [datasetId]);
+    
+    const data = result.rows.map(row => row.data);
+    
+    res.json({ success: true, data, rowCount: data.length });
+  } catch (err) {
+    console.error('Error getting dataset data:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -250,6 +292,33 @@ app.post('/api/load-dataset', async (req, res) => {
   }
 });
 
+// Delete dataset permanently
+app.post('/api/delete-dataset', async (req, res) => {
+  const { datasetId } = req.body;
+  
+  if (!datasetId) {
+    return res.status(400).json({ success: false, error: 'Dataset ID required' });
+  }
+  
+  try {
+    const checkResult = await pool.query('SELECT id FROM imported_datasets WHERE id = $1', [datasetId]);
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Dataset not found' });
+    }
+    
+    await pool.query('DELETE FROM sql_imported_data WHERE dataset_id = $1', [datasetId]);
+    await pool.query('DELETE FROM imported_datasets WHERE id = $1', [datasetId]);
+    
+    console.log(`✅ Deleted dataset ${datasetId} permanently`);
+    res.json({ success: true, message: 'Dataset deleted permanently' });
+  } catch (err) {
+    console.error('Delete error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Get imported data
 app.get('/api/get-imported-data', async (req, res) => {
   try {
     const datasetResult = await pool.query(`
@@ -273,7 +342,12 @@ app.get('/api/get-imported-data', async (req, res) => {
     
     const data = dataResult.rows.map(row => row.data);
     
-    res.json({ success: true, data, rowCount: data.length });
+    res.json({ 
+      success: true, 
+      data, 
+      rowCount: data.length,
+      datasetId
+    });
   } catch (err) {
     console.error('Error getting imported data:', err);
     res.status(500).json({ success: false, error: err.message });
@@ -313,6 +387,89 @@ function buildConnectionConfig(userConfig) {
   
   return config;
 }
+
+// Add after your other requires
+const fs = require('fs');
+const path = require('path');
+
+// Path to store encrypted credentials (in production, use a proper secret manager)
+const CREDENTIALS_FILE = path.join(__dirname, '.sql_credentials.json');
+
+// Function to save credentials
+function saveCredentials(connectionConfig) {
+  try {
+    // Don't store empty credentials
+    if (!connectionConfig || !connectionConfig.server) return;
+    
+    const data = {
+      server: connectionConfig.server,
+      database: connectionConfig.database,
+      username: connectionConfig.username || '',
+      password: connectionConfig.password || '', // In production, encrypt this!
+      port: connectionConfig.port || '1433',
+      encrypt: connectionConfig.encrypt || false,
+      trustCert: connectionConfig.trustCert !== false,
+      savedAt: new Date().toISOString()
+    };
+    
+    fs.writeFileSync(CREDENTIALS_FILE, JSON.stringify(data, null, 2));
+    console.log('✅ SQL Server credentials saved for auto-reconnect');
+  } catch (err) {
+    console.error('Failed to save credentials:', err.message);
+  }
+}
+
+// Function to load credentials
+function loadCredentials() {
+  try {
+    if (fs.existsSync(CREDENTIALS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(CREDENTIALS_FILE, 'utf8'));
+      console.log('📂 Loaded saved SQL Server credentials');
+      return data;
+    }
+  } catch (err) {
+    console.error('Failed to load credentials:', err.message);
+  }
+  return null;
+}
+
+// After server starts, try to auto-resume real-time sync
+setTimeout(async () => {
+  try {
+    // Check if there's a saved dataset
+    const result = await pool.query(`
+      SELECT id, source FROM imported_datasets ORDER BY imported_at DESC LIMIT 1
+    `);
+    
+    if (result.rows.length > 0 && result.rows[0].source === 'sqlserver') {
+      const savedCredentials = loadCredentials();
+      if (savedCredentials && savedCredentials.server) {
+        console.log('🔄 Found saved credentials. Auto-resuming real-time sync...');
+        
+        const sqlConfig = {
+          user: savedCredentials.username,
+          password: savedCredentials.password,
+          server: savedCredentials.server,
+          database: savedCredentials.database,
+          port: parseInt(savedCredentials.port) || 1433,
+          options: {
+            encrypt: savedCredentials.encrypt || false,
+            trustServerCertificate: savedCredentials.trustCert !== false,
+            enableArithAbort: true
+          }
+        };
+        
+        realtimeSync.updateConfig(sqlConfig);
+        await realtimeSync.start();
+        console.log('✅ Real-time sync auto-resumed with saved credentials');
+      } else {
+        console.log('⚠️ No saved credentials found. Real-time sync will start after manual import.');
+      }
+    }
+  } catch (err) {
+    console.log('Auto-resume check failed:', err.message);
+  }
+}, 5000);
 
 app.post('/api/test-connection', async (req, res) => {
   const { server, database, username, password, port, encrypt, trustCert } = req.body;

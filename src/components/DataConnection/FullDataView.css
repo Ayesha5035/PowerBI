@@ -1,0 +1,197 @@
+/* src/components/DataConnection/FullDataView.css */
+.full-data-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20000;
+  backdrop-filter: blur(4px);
+}
+
+.full-data-modal {
+  background: var(--color-card-bg, white);
+  border-radius: 16px;
+  width: 95%;
+  max-width: 1400px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+}
+
+.full-data-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-card-bg-alt, #f9fafb);
+}
+
+.full-data-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text-primary, #1f2937);
+}
+
+.full-data-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  color: #6b7280;
+}
+
+.full-data-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #dc2626;
+}
+
+.full-data-stats {
+  padding: 12px 24px;
+  background: var(--color-accent-light, rgba(1, 184, 170, 0.05));
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  display: flex;
+  gap: 24px;
+  font-size: 14px;
+  color: var(--color-text-secondary, #4b5563);
+}
+
+.full-data-table-container {
+  flex: 1;
+  overflow: auto;
+  padding: 0;
+}
+
+.full-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 800px;
+}
+
+.full-data-table th {
+  background: var(--color-card-bg-alt, #f9fafb);
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-primary, #1f2937);
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.full-data-table td {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--color-border-light, #f0f0f0);
+  color: var(--color-text-secondary, #4b5563);
+}
+
+.full-data-table tr:hover td {
+  background: var(--color-accent-light, rgba(1, 184, 170, 0.05));
+}
+
+.row-number-col {
+  width: 50px;
+  text-align: center;
+}
+
+.row-number {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.full-data-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-card-bg-alt, #f9fafb);
+}
+
+.pagination-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-card-bg, white);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--color-accent, #01b8aa);
+  color: white;
+  border-color: var(--color-accent, #01b8aa);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: var(--color-text-secondary, #4b5563);
+}
+/* src/components/DataConnection/FullDataView.css - Add these */
+
+.full-data-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.full-data-edit-btn {
+  background: var(--color-accent, #01b8aa);
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.full-data-edit-btn:hover {
+  background: var(--color-accent-dark, #019a8f);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .full-data-modal {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+  
+  .full-data-table th,
+  .full-data-table td {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .pagination-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+}
