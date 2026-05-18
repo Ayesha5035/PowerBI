@@ -1,24 +1,22 @@
 // src/components/DataConnection/ExcelUploader.jsx
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
+import toast from 'react-hot-toast';
 import './ExcelUploader.css';
 
-// This component wraps the existing card and adds file upload functionality
 const ExcelUploader = ({ 
-  children,           // The existing card content (icon, title, description)
-  onUploadSuccess,    // Callback when upload is complete
-  acceptedFormats = '.xlsx,.xls,.csv'  // File formats accepted
+  children,
+  onUploadSuccess,    // Now expects to save to database
+  acceptedFormats = '.xlsx,.xls,.csv'
 }) => {
-  // State variables
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileInfo, setFileInfo] = useState(null);
-  const [status, setStatus] = useState(null); // 'loading', 'success', 'error'
+  const [status, setStatus] = useState(null);
   const [message, setMessage] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   
-  // Reference to hidden file input
   const fileInputRef = useRef(null);
 
-  // Format file size from bytes to readable format
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -27,34 +25,40 @@ const ExcelUploader = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Parse Excel/CSV file to JSON
-  const parseFile = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-          resolve(jsonData);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsArrayBuffer(file);
-    });
-  };
+ 
+// Update the parseFile function to handle large files efficiently
 
-  // Handle file selection from file picker
+const parseFile = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        // Use sheetjs with cellDates option for better performance
+        const workbook = XLSX.read(data, { 
+          type: 'array',
+          cellDates: false,  // Don't parse dates for faster loading
+          cellNF: false,     // Don't parse number formats
+          cellText: false    // Don't store text
+        });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+        resolve(jsonData);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsArrayBuffer(file);
+  });
+};
+
   const handleFileSelect = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
     
-    // Store file info
     setSelectedFile(file);
     setFileInfo({
       name: file.name,
@@ -65,15 +69,14 @@ const ExcelUploader = ({
     setMessage('');
   };
 
-  // Trigger the file picker dialog
   const openFilePicker = () => {
     fileInputRef.current.click();
   };
 
-  // Upload the selected file
   const handleUpload = async () => {
     if (!selectedFile) return;
     
+    setIsUploading(true);
     setStatus('loading');
     setMessage('Processing file...');
     
@@ -81,19 +84,22 @@ const ExcelUploader = ({
       // Parse the file
       const parsedData = await parseFile(selectedFile);
       
-      // Log for debugging
+      if (!parsedData || parsedData.length === 0) {
+        throw new Error('No data found in file');
+      }
+      
       console.log(`📊 ${selectedFile.name} parsed:`, {
         rows: parsedData.length,
         columns: Object.keys(parsedData[0] || {}),
         sample: parsedData[0]
       });
       
-      // Simulate network delay (remove in production)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Generate a unique file name
+      const fileName = `excel_${selectedFile.name.replace(/\.[^/.]+$/, '')}_${Date.now()}.json`;
       
-      // Call parent callback with parsed data
+      // Call parent callback with parsed data to save to database
       if (onUploadSuccess) {
-        onUploadSuccess(parsedData, selectedFile.name);
+        await onUploadSuccess(parsedData, fileName);
       }
       
       setStatus('success');
@@ -105,29 +111,29 @@ const ExcelUploader = ({
         setFileInfo(null);
         setStatus(null);
         setMessage('');
-        // Clear input so same file can be selected again
+        setIsUploading(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
       }, 3000);
       
     } catch (error) {
       console.error('Upload error:', error);
       setStatus('error');
-      setMessage('✗ Failed to parse file. Please check the format.');
+      setMessage('✗ Failed to parse file: ' + error.message);
+      setIsUploading(false);
     }
   };
 
-  // Cancel selected file
   const handleCancel = () => {
     setSelectedFile(null);
     setFileInfo(null);
     setStatus(null);
     setMessage('');
+    setIsUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
     <div className="excel-uploader">
-      {/* Hidden file input */}
       <input
         type="file"
         ref={fileInputRef}
@@ -136,13 +142,11 @@ const ExcelUploader = ({
         className="upload-input"
       />
       
-      {/* Clickable card - triggers file picker */}
-      <div onClick={openFilePicker}>
+      <div onClick={openFilePicker} style={{ cursor: 'pointer' }}>
         {children}
       </div>
       
-      {/* Show selected file info */}
-      {fileInfo && !status && (
+      {fileInfo && !status && !isUploading && (
         <div className="selected-file-preview">
           <div className="file-info">
             <span>📄</span>
@@ -154,13 +158,12 @@ const ExcelUploader = ({
               Cancel
             </button>
             <button className="upload-action-btn" onClick={handleUpload}>
-              Upload
+              Upload to Database
             </button>
           </div>
         </div>
       )}
       
-      {/* Show loading status */}
       {status === 'loading' && (
         <div className="upload-status loading">
           <div className="spinner"></div>
@@ -168,7 +171,6 @@ const ExcelUploader = ({
         </div>
       )}
       
-      {/* Show success status */}
       {status === 'success' && (
         <div className="upload-status success">
           <span>✅</span>
@@ -176,7 +178,6 @@ const ExcelUploader = ({
         </div>
       )}
       
-      {/* Show error status */}
       {status === 'error' && (
         <div className="upload-status error">
           <span>❌</span>

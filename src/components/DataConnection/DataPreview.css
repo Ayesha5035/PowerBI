@@ -176,14 +176,23 @@
 
  /* Edit button style */
 .edit-btn {
+<<<<<<< Updated upstream
   background: #f1f5f9;
   color: #475569;
   border: 1px solid #e2e8f0;
+=======
+  background: var(--color-card-bg-alt);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  background-color: rgb(168, 217, 230);
+>>>>>>> Stashed changes
 }
 
 .edit-btn:hover {
   background: #e2e8f0;
   transform: translateY(-2px);
+  color: rgb(5, 5, 34);
+  background-color: rgb(243, 244, 246);
 }
 
 /* Responsive */

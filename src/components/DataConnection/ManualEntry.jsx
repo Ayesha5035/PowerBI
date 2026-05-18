@@ -9,14 +9,17 @@ import {
   FiEdit, 
   FiSave, 
   FiX,
-  FiCopy
+  FiCopy,
+  FiDatabase
 } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 import './ManualEntry.css';
 
-const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = null }) => {
+const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = null, isEditing = false }) => {
   // State for columns and rows
-  const [columns, setColumns] = useState(initialData ? Object.keys(initialData[0]) : ['Column1', 'Column2', 'Column3']);
+  const [columns, setColumns] = useState(initialData && initialData.length > 0 ? Object.keys(initialData[0]) : ['Column1', 'Column2', 'Column3']);
   const [newColumnName, setNewColumnName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   
   // Paste state
   const [showPasteArea, setShowPasteArea] = useState(false);
@@ -27,15 +30,15 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
     if (initialData && initialData.length > 0) {
       return initialData.map((row, idx) => ({
         id: Date.now() + idx,
-        data: columns.map(col => row[col] || '')
+        data: columns.map(col => row[col] !== undefined && row[col] !== null ? String(row[col]) : '')
       }));
     }
     return [{ id: Date.now(), data: Array(columns.length).fill('') }];
   };
   
   const [rows, setRows] = useState(getInitialRows());
-  const [fileName, setFileName] = useState(initialFileName || `manual_entry_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}`);
-  const [isEditing, setIsEditing] = useState(!!initialData);
+  const [fileName, setFileName] = useState(initialFileName || `manual_data_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}`);
+  const [isEditMode, setIsEditMode] = useState(!!initialData && !!initialFileName);
   
   // History for undo/redo
   const [history, setHistory] = useState([]);
@@ -59,6 +62,9 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
       setColumns(prevState.columns);
       setRows(prevState.rows);
       setHistoryIndex(historyIndex - 1);
+      toast.info('Undo successful');
+    } else {
+      toast.error('Nothing to undo');
     }
   };
   
@@ -69,6 +75,9 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
       setColumns(nextState.columns);
       setRows(nextState.rows);
       setHistoryIndex(historyIndex + 1);
+      toast.info('Redo successful');
+    } else {
+      toast.error('Nothing to redo');
     }
   };
   
@@ -98,6 +107,10 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
   // Add new column
   const addColumn = () => {
     if (newColumnName.trim()) {
+      if (columns.includes(newColumnName.trim())) {
+        toast.error('Column name already exists');
+        return;
+      }
       const newColumns = [...columns, newColumnName.trim()];
       const newRows = rows.map(row => ({
         ...row,
@@ -107,11 +120,15 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
       setRows(newRows);
       saveToHistory(newColumns, newRows);
       setNewColumnName('');
+      toast.success(`Column "${newColumnName}" added`);
+    } else {
+      toast.error('Please enter a column name');
     }
   };
   
   // Remove column
   const removeColumn = (index) => {
+    const columnName = columns[index];
     const newColumns = columns.filter((_, i) => i !== index);
     const newRows = rows.map(row => ({
       ...row,
@@ -120,6 +137,7 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
     setColumns(newColumns);
     setRows(newRows);
     saveToHistory(newColumns, newRows);
+    toast.success(`Column "${columnName}" removed`);
   };
   
   // Add new row
@@ -127,6 +145,7 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
     const newRows = [...rows, { id: Date.now(), data: Array(columns.length).fill('') }];
     setRows(newRows);
     saveToHistory(columns, newRows);
+    toast.success('Row added');
   };
   
   // Remove row
@@ -135,6 +154,9 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
       const newRows = rows.filter(row => row.id !== id);
       setRows(newRows);
       saveToHistory(columns, newRows);
+      toast.success('Row deleted');
+    } else {
+      toast.error('Cannot delete the last row');
     }
   };
   
@@ -156,18 +178,18 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
     try {
       const text = await navigator.clipboard.readText();
       if (!text) {
-        alert('No data found in clipboard. Please copy data from Excel or Google Sheets first.');
+        toast.error('No data found in clipboard. Please copy data from Excel or Google Sheets first.');
         return;
       }
       
-      const rows = text.split('\n').filter(row => row.trim());
-      if (rows.length === 0) {
-        alert('No valid data found');
+      const parsedRows = text.split('\n').filter(row => row.trim());
+      if (parsedRows.length === 0) {
+        toast.error('No valid data found');
         return;
       }
       
       // Parse data (tab or comma separated)
-      const parsedData = rows.map(row => {
+      const parsedData = parsedRows.map(row => {
         if (row.includes('\t')) {
           return row.split('\t').map(cell => cell.trim());
         } else {
@@ -179,7 +201,7 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
       const dataRows = parsedData.slice(1);
       
       const newRows = dataRows.map((row, idx) => {
-        const rowData = [...newColumns.map((_, colIdx) => row[colIdx] || '')];
+        const rowData = newColumns.map((_, colIdx) => row[colIdx] || '');
         return {
           id: Date.now() + idx,
           data: rowData
@@ -196,24 +218,27 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
       setShowPasteArea(false);
       setPasteData('');
       
-      alert(`Successfully pasted ${newRows.length} rows with ${newColumns.length} columns!`);
+      toast.success(`Successfully pasted ${newRows.length} rows with ${newColumns.length} columns!`);
     } catch (err) {
       console.error('Paste error:', err);
-      alert('Unable to read clipboard. Please use the text area to paste manually.');
+      toast.error('Unable to read clipboard. Please use the text area to paste manually.');
     }
   };
   
   // Handle manual paste in text area
   const handleManualPaste = () => {
     if (!pasteData.trim()) {
-      alert('Please paste your data in the text area');
+      toast.error('Please paste your data in the text area');
       return;
     }
     
-    const rows = pasteData.split('\n').filter(row => row.trim());
-    if (rows.length === 0) return;
+    const parsedRows = pasteData.split('\n').filter(row => row.trim());
+    if (parsedRows.length === 0) {
+      toast.error('No valid data found');
+      return;
+    }
     
-    const parsedData = rows.map(row => {
+    const parsedData = parsedRows.map(row => {
       if (row.includes('\t')) {
         return row.split('\t').map(cell => cell.trim());
       } else {
@@ -225,7 +250,7 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
     const dataRows = parsedData.slice(1);
     
     const newRows = dataRows.map((row, idx) => {
-      const rowData = [...newColumns.map((_, colIdx) => row[colIdx] || '')];
+      const rowData = newColumns.map((_, colIdx) => row[colIdx] || '');
       return {
         id: Date.now() + idx,
         data: rowData
@@ -242,12 +267,22 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
     setShowPasteArea(false);
     setPasteData('');
     
-    alert(`Successfully pasted ${newRows.length} rows with ${newColumns.length} columns!`);
+    toast.success(`Successfully pasted ${newRows.length} rows with ${newColumns.length} columns!`);
   };
   
-  // Convert to JSON and save
-  const handleSave = () => {
-    const data = rows.map(row => {
+  // Convert to JSON and save to database
+  const handleSave = async () => {
+    // Filter out empty rows
+    const filteredData = rows.filter(row => 
+      row.data.some(cell => cell !== null && cell !== undefined && cell !== '')
+    );
+    
+    if (filteredData.length === 0) {
+      toast.error('No data to save');
+      return;
+    }
+    
+    const data = filteredData.map(row => {
       const obj = {};
       columns.forEach((col, idx) => {
         obj[col] = row.data[idx] || '';
@@ -255,8 +290,18 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
       return obj;
     });
     
-    onSave(data, fileName.endsWith('.json') ? fileName : `${fileName}.json`);
-    onClose();
+    setIsSaving(true);
+    try {
+      // Call parent onSave which should save to database
+      await onSave(data, fileName);
+      toast.success(`Successfully saved ${data.length} rows!`);
+      onClose();
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save data: ' + error.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   // Clear all data
@@ -265,6 +310,7 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
       const newRows = [{ id: Date.now(), data: Array(columns.length).fill('') }];
       setRows(newRows);
       saveToHistory(columns, newRows);
+      toast.info('All data cleared');
     }
   };
 
@@ -273,7 +319,7 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
       <div className="manual-modal" onClick={(e) => e.stopPropagation()}>
         <div className="manual-modal-header">
           <h2>
-            <FiClipboard size={22} /> {isEditing ? 'Edit Data' : 'Manual Data Entry'}
+            <FiClipboard size={22} /> {isEditMode ? 'Edit Data' : 'Manual Data Entry'}
           </h2>
           <button className="close-modal" onClick={onClose}>×</button>
         </div>
@@ -418,8 +464,8 @@ const ManualEntry = ({ onSave, onClose, initialData = null, initialFileName = nu
         
         <div className="manual-modal-footer">
           <button className="cancel-btn" onClick={onClose}>Cancel</button>
-          <button className="connect-btn" onClick={handleSave}>
-            {isEditing ? 'Update Data' : 'Import Data'}
+          <button className="connect-btn" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Saving...' : (isEditMode ? 'Update Data' : 'Import Data')}
           </button>
         </div>
       </div>

@@ -22,7 +22,25 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
   const [tables, setTables] = useState([]);
   const [showTableSelector, setShowTableSelector] = useState(false);
   const [executing, setExecuting] = useState(false);
+<<<<<<< Updated upstream
   const [queryResult, setQueryResult] = useState(null);
+=======
+  const [showFullTips, setShowFullTips] = useState(false);
+  const [socket, setSocket] = useState(null);
+  const [selectedTable, setSelectedTable] = useState('');
+  const [isLoadingTable, setIsLoadingTable] = useState(false);
+
+  useEffect(() => {
+    const newSocket = io('http://localhost:5000');
+    setSocket(newSocket);
+    
+    newSocket.on('realtime-data-update', (data) => {
+      console.log('Real-time update received:', data);
+    });
+    
+    return () => newSocket.disconnect();
+  }, []);
+>>>>>>> Stashed changes
 
   const handleConfigChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -34,6 +52,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
     setConnectionStatus(null);
     setPreviewData(null);
     setTables([]);
+    setSelectedTable('');
   };
 
   const testConnection = async () => {
@@ -100,7 +119,11 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
         body: JSON.stringify({ 
           ...connectionConfig,
           query: query,
+<<<<<<< Updated upstream
           limit: 500
+=======
+          limit: 5000
+>>>>>>> Stashed changes
         })
       });
       const result = await response.json();
@@ -122,12 +145,20 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
     setExecuting(false);
   };
 
+  // FIXED: Proper table loading with selectedTable state
   const loadTableData = async (tableName) => {
+<<<<<<< Updated upstream
     const newQuery = `SELECT TOP 100 * FROM [${tableName}]`;
+=======
+    if (!tableName) return;
+    
+    setIsLoadingTable(true);
+    setSelectedTable(tableName);
+    const newQuery = `SELECT TOP 5000 * FROM [${tableName}]`;
+>>>>>>> Stashed changes
     setQuery(newQuery);
     setShowTableSelector(false);
     
-    setExecuting(true);
     setConnectionStatus({ type: 'loading', message: `Loading ${tableName}...` });
     
     try {
@@ -137,7 +168,11 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
         body: JSON.stringify({ 
           ...connectionConfig,
           query: newQuery,
+<<<<<<< Updated upstream
           limit: 500
+=======
+          limit: 5000
+>>>>>>> Stashed changes
         })
       });
       const result = await response.json();
@@ -147,14 +182,18 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
         setQueryResult(result.data);
         setConnectionStatus({ type: 'success', message: `Loaded ${result.data.length} rows from ${tableName}` });
       } else {
-        setConnectionStatus({ type: 'error', message: result.error });
+        setConnectionStatus({ type: 'error', message: result.error || 'Failed to load table' });
+        setSelectedTable('');
       }
     } catch (error) {
-      setConnectionStatus({ type: 'error', message: 'Failed to load table' });
+      console.error('Load table error:', error);
+      setConnectionStatus({ type: 'error', message: 'Failed to load table: ' + error.message });
+      setSelectedTable('');
     }
-    setExecuting(false);
+    setIsLoadingTable(false);
   };
 
+<<<<<<< Updated upstream
   const handleImport = () => {
     if (previewData && previewData.length > 0) {
       const fileName = `sql_${connectionConfig.database}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
@@ -162,8 +201,79 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
       onClose();
     } else {
       alert('No data to import. Please execute a query first.');
+=======
+  // FIXED: Handle table selection change
+  const handleTableChange = (e) => {
+    const tableName = e.target.value;
+    if (tableName) {
+      loadTableData(tableName);
+    } else {
+      setSelectedTable('');
+      setPreviewData(null);
     }
   };
+
+        const handleImport = async () => {
+  if (previewData && previewData.length > 0) {
+    setIsImporting(true);
+    const fileName = `sql_${connectionConfig.database}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+    
+    try {
+      const saveResponse = await fetch('http://localhost:5000/api/save-to-database', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: previewData,
+          fileName: fileName,
+          source: 'sqlserver'
+        })
+      });
+      
+      const saveResult = await saveResponse.json();
+      
+      if (saveResult.success) {
+        await fetch('http://localhost:5000/api/start-realtime-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            syncInterval: 3000,
+            tableName: selectedTable || 'FYP',
+            connectionConfig: {
+              server: connectionConfig.server,
+              database: connectionConfig.database,
+              username: connectionConfig.username,
+              password: connectionConfig.password,
+              port: connectionConfig.port || '1433',
+              encrypt: connectionConfig.encrypt,
+              trustCert: connectionConfig.trustCert
+            }
+          })
+        });
+        
+        // Reset sync state for the new dataset
+        await fetch('http://localhost:5000/api/reset-realtime-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ datasetId: saveResult.datasetId })
+        });
+        
+        onConnect(previewData, fileName, saveResult.datasetId);
+        onClose();
+        toast.success(`Successfully imported ${previewData.length} rows! Real-time sync is now active.`);
+      } else {
+        toast.error('Failed to save to database');
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('Failed to import data: ' + error.message);
+>>>>>>> Stashed changes
+    }
+    setIsImporting(false);
+  } else {
+    toast.error('No data to import. Please execute a query first.');
+  }
+};
+          
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -301,17 +411,24 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
                   <label>Quick Select Table</label>
                   <div className="selector-wrapper">
                     <select 
+<<<<<<< Updated upstream
                       onChange={(e) => loadTableData(e.target.value)}
                       defaultValue=""
+=======
+                      onChange={handleTableChange}
+                      value={selectedTable}
+                      disabled={isLoadingTable}
+>>>>>>> Stashed changes
                     >
                       <option value="">-- Select a table to preview --</option>
                       {tables.map((table, idx) => (
-                        <option key={idx} value={table.TABLE_NAME}>
+                        <option key={`${table.TABLE_SCHEMA}.${table.TABLE_NAME}`} value={table.TABLE_NAME}>
                           {table.TABLE_SCHEMA}.{table.TABLE_NAME}
                         </option>
                       ))}
                     </select>
                     <FiTable className="selector-icon" />
+                    {isLoadingTable && <div className="spinner-small"></div>}
                   </div>
                 </div>
               )}
@@ -331,11 +448,15 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
                 </small>
               </div>
               
+<<<<<<< Updated upstream
               <button 
                 className="execute-btn" 
                 onClick={executeQuery}
                 disabled={executing}
               >
+=======
+              <button className="execute-btn" onClick={executeQuery} disabled={executing || isLoadingTable}>
+>>>>>>> Stashed changes
                 {executing ? <FiLoader className="spinner" /> : <FiRefreshCw />}
                 {executing ? 'Executing...' : 'Execute Query'}
               </button>
@@ -349,7 +470,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
                 <table className="preview-table">
                   <thead>
                     <tr>
-                      {Object.keys(previewData[0]).map(key => (
+                      {previewData[0] && Object.keys(previewData[0]).map(key => (
                         <th key={key}>{key}</th>
                       ))}
                     </tr>
@@ -357,7 +478,7 @@ const SQLServerConnector = ({ onConnect, onClose }) => {
                   <tbody>
                     {previewData.slice(0, 20).map((row, idx) => (
                       <tr key={idx}>
-                        {Object.values(row).map((val, i) => (
+                        {row && Object.values(row).map((val, i) => (
                           <td key={i}>
                             {val === null ? 'NULL' : 
                              typeof val === 'object' ? JSON.stringify(val).slice(0, 50) : 
