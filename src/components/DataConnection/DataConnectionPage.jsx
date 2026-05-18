@@ -1,6 +1,7 @@
 // src/components/DataConnection/DataConnectionPage.jsx
 import React, { useState, useEffect } from "react";
 import Sidebar from "../Sidebar/Sidebar";
+import { io } from 'socket.io-client'; 
 import Navbar from "../Navbar/Navbar";
 import ExcelUploader from "./ExcelUploader";
 import DataPreview from "./DataPreview";
@@ -8,13 +9,22 @@ import SQLServerConnector from "./SQLServerConnector";
 import ManualEntry from "./ManualEntry";
 import { 
   FiDatabase, FiCloud, FiFileText, FiFile, FiClipboard, 
-  FiBookOpen, FiFolder, FiBook, FiArrowLeft
+  FiBookOpen, FiFolder, FiBook, FiArrowLeft, FiLoader
 } from 'react-icons/fi';
 import "./DataConnectionPage.css";
 
-const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
+const DataConnectionPage = ({ 
+  onBackToDashboard, 
+  onDataUpload,
+  sidebarOpen,        // ✅ ADDED
+  toggleSidebar,      // ✅ ADDED
+  onNavigateToDataConnection,
+  onNavigateToWorkspace,
+  onNavigateToFavourites,
+  onNavigateToReportBuilder
+}) => {
   const [activeTab, setActiveTab] = useState("create");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // ❌ REMOVED: const [sidebarOpen, setSidebarOpen] = useState(true);
   
   // State for uploaded data preview
   const [uploadedData, setUploadedData] = useState(null);
@@ -31,9 +41,7 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [socket, setSocket] = useState(null);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  // ❌ REMOVED: const toggleSidebar = () => { setSidebarOpen(!sidebarOpen); };
 
   // Load saved data on page refresh
   useEffect(() => {
@@ -69,11 +77,9 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
       
       setUploadedData(prevData => {
         if (!prevData) return data.newRecords;
-        // Add new records to the beginning and keep all
         return [...data.newRecords, ...prevData];
       });
       
-      // Show notification
       if (data.newRecords.length > 0) {
         console.log(`✨ ${data.newRecords.length} new records added in real-time!`);
       }
@@ -85,7 +91,6 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
   const handleFileUpload = (parsedData, fileName) => {
     console.log(`✅ File uploaded: ${fileName}`);
     console.log(`📊 Data rows: ${parsedData.length}`);
-    console.log(`📋 Column headers:`, Object.keys(parsedData[0] || {}));
     
     setUploadedData(parsedData);
     setUploadedFileName(fileName);
@@ -93,7 +98,6 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
     alert(`Successfully uploaded "${fileName}" with ${parsedData.length} rows of data!`);
   };
   
-  // Callback when SQL Server data is imported
   const handleSQLImport = (data, sourceName) => {
     console.log(`✅ SQL Data imported: ${sourceName}`);
     console.log(`📊 Data rows: ${data.length}`);
@@ -104,7 +108,6 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
     alert(`Successfully imported ${data.length} rows from SQL Server!`);
   };
   
-  // Callback when Manual Entry data is saved
   const handleManualSave = (data, fileName) => {
     console.log(`✅ Manual data saved: ${fileName}`);
     console.log(`📊 Data rows: ${data.length}`);
@@ -115,7 +118,6 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
     alert(`Successfully saved ${data.length} rows of manual data!`);
   };
   
-  // Handle save to database
   const handleSaveToDatabase = async (data, fileName) => {
     try {
       const response = await fetch('http://localhost:5000/api/save-to-database', {
@@ -141,13 +143,11 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
     }
   };
   
-  // Handle discard
   const handleDiscardData = () => {
     setUploadedData(null);
     setUploadedFileName(null);
   };
   
-  // Handle edit data - opens ManualEntry with existing data
   const handleEditData = () => {
     setEditingData(uploadedData);
     setEditingFileName(uploadedFileName);
@@ -160,7 +160,7 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
     if (sourceId === 'sqlserver') {
       setShowSQLModal(true);
     } else if (sourceId === 'paste') {
-       console.log('📝 Opening Manual Entry modal'); 
+      console.log('📝 Opening Manual Entry modal'); 
       setShowManualModal(true);
     }
   };
@@ -219,8 +219,6 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
         </ExcelUploader>
       );
     }
-     console.log('Rendering card for:', source.id, source.name);
-    // Fixed: Added explicit cursor pointer and ensured onClick works
     return (
       <div key={source.id} onClick={() => handleCardClick(source.id)} style={{ cursor: 'pointer' }}>
         {cardContent}
@@ -249,8 +247,11 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
         setActiveTab={setActiveTab}
         sidebarOpen={sidebarOpen}
         toggleSidebar={toggleSidebar}
-        onNavigateToDataConnection={() => { }}
+        onNavigateToDataConnection={onNavigateToDataConnection}
         onNavigateToHome={handleNavigateToHome}
+        onNavigateToWorkspace={onNavigateToWorkspace}
+        onNavigateToFavourites={onNavigateToFavourites}
+        onNavigateToReportBuilder={onNavigateToReportBuilder}
       />
       <Navbar sidebarOpen={sidebarOpen} />
       <div className={`dataconnection-page ${sidebarOpen ? "open" : "closed"}`}>
@@ -262,7 +263,6 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
           <div className="datasources-grid">
             {dataSources.map(source => renderDataSourceCard(source))}
           </div>
-
          
           {/* Data Preview Component */}
           {uploadedData && (
@@ -285,7 +285,7 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
         />
       )}
       
-      {/* Manual Entry Modal (for creating new data) */}
+      {/* Manual Entry Modal */}
       {showManualModal && (
         <ManualEntry
           onSave={handleManualSave}
@@ -293,7 +293,7 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
         />
       )}
       
-      {/* Edit Modal (for editing existing data) */}
+      {/* Edit Modal */}
       {showEditModal && (
         <ManualEntry
           onSave={handleManualSave}

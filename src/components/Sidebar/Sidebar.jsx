@@ -30,7 +30,6 @@ function Sidebar({
   }, []);
 
   const handleItemClick = (itemId) => {
-    // Navigate based on menu item clicked
     if (itemId === "create") {
       if (onNavigateToDataConnection) onNavigateToDataConnection();
     } 
@@ -50,7 +49,6 @@ function Sidebar({
       setActiveTab(itemId);
     }
     
-    // Close mobile sidebar after clicking
     if (isMobile && mobileSidebarOpen) {
       setMobileSidebarOpen(false);
     }

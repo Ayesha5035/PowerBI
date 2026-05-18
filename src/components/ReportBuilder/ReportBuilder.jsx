@@ -86,9 +86,21 @@ const DropZone = ({ label, value, onDrop, onClear, icon }) => {
   );
 };
 
-const ReportBuilder = ({ onBackToDashboard, uploadedData, uploadedFileName, uploadedColumns }) => {
+// ✅ UPDATED: Added all navigation props
+const ReportBuilder = ({ 
+  onBackToDashboard, 
+  uploadedData, 
+  uploadedFileName, 
+  uploadedColumns,
+  sidebarOpen,              // ✅ RECEIVE FROM APP
+  toggleSidebar,            // ✅ RECEIVE FROM APP
+  onNavigateToDataConnection,
+  onNavigateToWorkspace,
+  onNavigateToFavourites,
+  onNavigateToReportBuilder
+}) => {
   const [activeTab, setActiveTab] = useState("reports");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // ❌ REMOVED: const [sidebarOpen, setSidebarOpen] = useState(true);
   const [charts, setCharts] = useState([]);
   const [selectedChartId, setSelectedChartId] = useState(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -113,7 +125,7 @@ const ReportBuilder = ({ onBackToDashboard, uploadedData, uploadedFileName, uplo
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [maxRows, setMaxRows] = useState(1000);
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  // ❌ REMOVED: const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const toggleLeftPanel = () => {
     setIsLeftPanelOpen(!isLeftPanelOpen);
@@ -381,13 +393,17 @@ const ReportBuilder = ({ onBackToDashboard, uploadedData, uploadedFileName, uplo
   return (
     <DndProvider backend={HTML5Backend}>
       <div>
+        {/* ✅ UPDATED: Sidebar with all navigation props */}
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           sidebarOpen={sidebarOpen}
           toggleSidebar={toggleSidebar}
-          onNavigateToDataConnection={() => { }}
+          onNavigateToDataConnection={onNavigateToDataConnection}
           onNavigateToHome={handleNavigateToHome}
+          onNavigateToWorkspace={onNavigateToWorkspace}
+          onNavigateToFavourites={onNavigateToFavourites}
+          onNavigateToReportBuilder={onNavigateToReportBuilder}
         />
         <Navbar sidebarOpen={sidebarOpen} />
 

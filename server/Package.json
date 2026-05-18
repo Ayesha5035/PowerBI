@@ -8,11 +8,16 @@
     "dev": "nodemon index.js"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
+    "express-session": "^1.19.0",
+    "jsonwebtoken": "^9.0.3",
     "mssql": "^10.0.4",
     "node-cron": "^4.2.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "pg": "^8.20.0",
     "redis": "^5.12.1",
     "socket.io": "^4.8.3",

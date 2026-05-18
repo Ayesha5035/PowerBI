@@ -1,4 +1,3 @@
-// src/components/Dashboard/Dashboard.jsx
 import React, { useState, useEffect } from "react";
 import Sidebar from "../Sidebar/Sidebar";
 import Navbar from "../Navbar/Navbar";
@@ -7,19 +6,16 @@ import { FaPlus, FaFileAlt, FaClock, FaFolderOpen, FaChartLine, FaHeart } from "
 import "./Dashboard.css";
 
 function Dashboard({ 
-  sidebarOpen,           // ← ADD THIS
-  toggleSidebar,         // ← ADD COMMA HERE (fixed)
+  sidebarOpen,           
+  toggleSidebar,         
   onNavigateToDataConnection,
   onNavigateToWorkspace,
   onNavigateToFavourites,
   onNavigateToReportBuilder
 }) {
-  // ✅ ADD THIS - missing activeTab state
   const [activeTab, setActiveTab] = useState("home");
-  
   const [recentReports, setRecentReports] = useState([]);
 
-  // Load recent reports from localStorage when page loads
   useEffect(() => {
     loadRecentReports();
   }, []);
@@ -41,7 +37,6 @@ function Dashboard({
     setActiveTab("home");
   };
 
-  // Card click handlers
   const handleOpenWorkspace = () => {
     if (onNavigateToWorkspace) {
       onNavigateToWorkspace();
@@ -77,20 +72,26 @@ function Dashboard({
         onNavigateToFavourites={onNavigateToFavourites}
         onNavigateToReportBuilder={onNavigateToReportBuilder}
       />
-      <Navbar sidebarOpen={sidebarOpen} />
+      
+      {/* PASS NAVIGATION PROPS TO NAVBAR */}
+      <Navbar 
+        sidebarOpen={sidebarOpen} 
+        onNavigateToDataConnection={onNavigateToDataConnection}
+        onNavigateToWorkspace={onNavigateToWorkspace}
+        onNavigateToReportBuilder={onNavigateToReportBuilder}
+        onNavigateToFavourites={onNavigateToFavourites}
+      />
       
       <div className={`dashboard ${sidebarOpen ? "open" : "closed"}`}>
-        {/* Header */}
         <div className="dashboard-header">
           <div>
-            <h1>Welcome back, User! </h1>
+            <h1>Welcome back! </h1>
           </div>
           <button className="new-report" onClick={handleNewReport}>
             <FaPlus /> New Report
           </button>
         </div>
 
-        {/* Workspaces Section */}
         <div className="section-title">
           <FaFolderOpen />
           <span>My Workspaces</span>
@@ -119,7 +120,6 @@ function Dashboard({
           />
         </div>
 
-        {/* Recent Section */}
         <div className="section-title">
           <FaClock />
           <span>Recent</span>

@@ -1,28 +1,54 @@
 // server/index.js
 const express = require('express');
-const sql = require('mssql');
 const cors = require('cors');
-const dotenv = require('dotenv');
+const path = require('path');
+const sql = require('mssql');
 const http = require('http');
+// Keep your existing path (don't change it)
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
+// Import authentication routes
+const authRoutes = require('./routes/auth');
+const userDataRoutes = require('./routes/user-data');
+
+// Import your existing services
 const ChangeDetector = require('./services/changeDetector');
 const RealtimeSync = require('./services/realtimeSync');
 const { initWebSocket, emitToAll } = require('./services/websocket');
 const { redisClient } = require('./db/redis');
 const { pool } = require('./db/postgres');
 
-dotenv.config();
-
 const app = express();
-app.use(cors());
+const PORT = process.env.PORT || 5000;
+
+// ============================================
+// MIDDLEWARE
+// ============================================
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json());
 
-// Create HTTP server
+// ============================================
+// AUTHENTICATION ROUTES (NEW)
+// ============================================
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userDataRoutes);
+
+// ============================================
+// CREATE HTTP SERVER FOR WEBSOCKET
+// ============================================
 const server = http.createServer(app);
 
 // Initialize WebSocket
 const io = initWebSocket(server);
 
-// Default SQL Server connection config (will be overridden by user connections)
+// ============================================
+// SQL SERVER CONNECTION (YOUR EXISTING CODE)
+// ============================================
+
+// Default SQL Server connection config
 const defaultSqlConfig = {
   user: process.env.SQL_USER || '',
   password: process.env.SQL_PASSWORD || '',
@@ -36,14 +62,14 @@ const defaultSqlConfig = {
   port: parseInt(process.env.SQL_PORT) || 1433
 };
 
-// Store active connections per session (in memory - will be cleared on server restart)
+// Store active connections per session
 const activeConnections = new Map();
 
 // Initialize Change Detector
 const changeDetector = new ChangeDetector(defaultSqlConfig);
 changeDetector.setSocketIO(io);
 
-// Initialize RealtimeSync with default config
+// Initialize RealtimeSync
 const realtimeSync = new RealtimeSync(defaultSqlConfig);
 
 // Start polling for changes
@@ -51,12 +77,13 @@ if (process.env.ENABLE_REAL_TIME === 'true') {
   changeDetector.startPolling(parseInt(process.env.POLLING_INTERVAL) || 2000);
 }
 
-// ============ REALTIME SYNC ENDPOINTS ============
+// ============================================
+// REALTIME SYNC ENDPOINTS (YOUR EXISTING CODE)
+// ============================================
 
 app.post('/api/start-realtime-sync', async (req, res) => {
   const { syncInterval = 2000, tableName = 'FYP', connectionConfig, sessionId = 'default' } = req.body;
   
-  // Store connection config if provided
   if (connectionConfig) {
     const sqlConfig = {
       user: connectionConfig.username || '',
@@ -67,7 +94,7 @@ app.post('/api/start-realtime-sync', async (req, res) => {
       options: {
         encrypt: connectionConfig.encrypt || false,
         trustServerCertificate: connectionConfig.trustCert !== false,
-        enableArithAbort: true
+        enableArithABort: true
       }
     };
     
@@ -77,7 +104,6 @@ app.post('/api/start-realtime-sync', async (req, res) => {
       startTime: Date.now()
     });
     
-    // Update realtimeSync with these credentials
     realtimeSync.updateConfig(sqlConfig);
     realtimeSync.tableName = tableName;
   }
@@ -115,7 +141,7 @@ app.post('/api/initial-import', async (req, res) => {
       options: {
         encrypt: connectionConfig.encrypt || false,
         trustServerCertificate: connectionConfig.trustCert !== false,
-        enableArithAbort: true
+        enableArithABort: true
       }
     };
     realtimeSync.updateConfig(sqlConfig);
@@ -136,9 +162,10 @@ app.get('/api/sync-status', async (req, res) => {
   });
 });
 
-// ============ DATABASE STORAGE ENDPOINTS ============
+// ============================================
+// DATABASE STORAGE ENDPOINTS (YOUR EXISTING CODE)
+// ============================================
 
-// Save imported data to PostgreSQL
 app.post('/api/save-to-database', async (req, res) => {
   const { data, fileName, source } = req.body;
   
@@ -253,7 +280,9 @@ app.get('/api/get-imported-data', async (req, res) => {
   }
 });
 
-// ============ CONNECTION TEST ENDPOINTS ============
+// ============================================
+// CONNECTION TEST ENDPOINTS (YOUR EXISTING CODE)
+// ============================================
 
 function buildConnectionConfig(userConfig) {
   const server = userConfig.server || process.env.DB_SERVER;
@@ -489,19 +518,26 @@ app.get('/api/realtime-statuses', async (req, res) => {
   }
 });
 
+// ============================================
+// HEALTH CHECK (MERGED)
+// ============================================
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', message: 'Server is running', timestamp: new Date().toISOString() });
 });
 
-const PORT = process.env.PORT || 5000;
-
+// ============================================
+// START SERVER
+// ============================================
 server.listen(PORT, () => {
-  console.log(`🚀 SQL Server API running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔌 WebSocket server ready`);
+  console.log(`🔐 Auth routes: /api/auth`);
+  console.log(`📦 User data routes: /api/user`);
   console.log(`🔄 Real-time polling: ${process.env.ENABLE_REAL_TIME === 'true' ? 'ENABLED' : 'DISABLED'}`);
 });
 
+// Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('\n🛑 Shutting down...');
   changeDetector.stopPolling();
