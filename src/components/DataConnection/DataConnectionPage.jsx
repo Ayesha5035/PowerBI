@@ -1,34 +1,38 @@
 // src/components/DataConnection/DataConnectionPage.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Sidebar from "../Sidebar/Sidebar";
 import Navbar from "../Navbar/Navbar";
 import ExcelUploader from "./ExcelUploader";
 import FullDataView from "./FullDataView";
 import SQLServerConnector from "./SQLServerConnector";
 import ManualEntry from "./ManualEntry";
-import io from 'socket.io-client';  // Add this import
+import DatasetCard from "./DatasetCard";
+import ConfirmationModal from "../Common/ConfirmationModal";
+import DataPreview from "./DataPreview";
+import io from 'socket.io-client';
+import toast from 'react-hot-toast';
 import { 
   FiDatabase, FiClipboard, FiFileText, FiFile, FiFolder, FiBook, FiArrowLeft, FiLoader
 } from 'react-icons/fi';
 import "./DataConnectionPage.css";
 
-const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
+const DataConnectionPage = ({ onBackToDashboard }) => {
   const [activeTab, setActiveTab] = useState("create");
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 768);
-  const [uploadedData, setUploadedData] = useState(null);
-  const [uploadedFileName, setUploadedFileName] = useState(null);
+  const [datasets, setDatasets] = useState([]);
+  const [selectedDataset, setSelectedDataset] = useState(null);
+  const [selectedDatasetData, setSelectedDatasetData] = useState(null);
   const [showSQLModal, setShowSQLModal] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
-  const [editingData, setEditingData] = useState(null);
-  const [editingFileName, setEditingFileName] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [socket, setSocket] = useState(null);
   const [isViewingData, setIsViewingData] = useState(false);
   const [deleteConfirmDataset, setDeleteConfirmDataset] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [uploadedData, setUploadedData] = useState(null);
+  const [uploadedFileName, setUploadedFileName] = useState(null);
   
-  // Edit modal states
+  // Edit modal states (declared only once)
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingData, setEditingData] = useState(null);
   const [editingFileName, setEditingFileName] = useState(null);
@@ -39,7 +43,7 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
   };
 
   // Load all datasets
-  const loadAllDatasets = async () => {
+  const loadAllDatasets = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch('http://localhost:5000/api/get-all-datasets');
@@ -55,10 +59,10 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
       console.error('Failed to load datasets:', err);
     }
     setIsLoading(false);
-  };
+  }, []);
 
   // Load dataset data when selected
-  const loadDatasetData = async (dataset) => {
+  const loadDatasetData = useCallback(async (dataset) => {
     setIsLoading(true);
     try {
       const response = await fetch('http://localhost:5000/api/get-dataset-data', {
@@ -81,38 +85,42 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
       toast.error('Error loading dataset');
     }
     setIsLoading(false);
-  };
+  }, []);
 
   // Load datasets on mount
   useEffect(() => {
     loadAllDatasets();
-  }, []);
+  }, [loadAllDatasets]);
 
   // WebSocket connection for real-time updates
   useEffect(() => {
     const newSocket = io('http://localhost:5000');
     setSocket(newSocket);
     
-    // Listen for new records
     newSocket.on('realtime-data-update', (data) => {
       console.log('📡 Real-time update received:', data);
+      
+      // Reload datasets to update row counts
       loadAllDatasets();
       
-      if (data.newRecords.length > 0) {
+      // If viewing a dataset, append new records to current view
+      if (selectedDatasetData && selectedDatasetData.length > 0 && data.newRecords) {
+        setSelectedDatasetData(prevData => [...data.newRecords, ...prevData]);
+      }
+      
+      if (data.newRecords && data.newRecords.length > 0) {
         toast.success(`${data.newRecords.length} new records added in real-time!`);
       }
     });
     
-    // Listen for deleted records
     newSocket.on('realtime-data-delete', (data) => {
       console.log('🗑️ Delete event received:', data);
       
       // Update the displayed data if viewing a dataset
-      if (selectedDatasetData && selectedDatasetData.length > 0) {
-        const filteredData = selectedDatasetData.filter(
-          record => !data.deletedIds.includes(record.Id)
+      if (selectedDatasetData && selectedDatasetData.length > 0 && data.deletedIds) {
+        setSelectedDatasetData(prevData => 
+          prevData.filter(record => !data.deletedIds.includes(record.Id))
         );
-        setSelectedDatasetData(filteredData);
         toast.info(`${data.count} records deleted from SQL Server, removed from view!`);
       }
       
@@ -121,27 +129,10 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
     });
     
     return () => newSocket.disconnect();
-  }, []);
+  }, [selectedDatasetData, loadAllDatasets]);
 
-  const handleFileUpload = (parsedData, fileName) => {
-    setUploadedData(parsedData);
-    setUploadedFileName(fileName);
-    alert(`Successfully uploaded "${fileName}" with ${parsedData.length} rows!`);
-  };
-  
-  const handleSQLImport = async (data, sourceName) => {
-    setUploadedData(data);
-    setUploadedFileName(sourceName);
-    alert(`Successfully imported ${data.length} rows from SQL Server! Real-time sync is active.`);
-  };
-  
-  const handleManualSave = (data, fileName) => {
-    setUploadedData(data);
-    setUploadedFileName(fileName);
-    alert(`Successfully saved ${data.length} rows!`);
-  };
-  
-  const handleSaveToDatabase = async (data, fileName) => {
+  const handleFileUpload = async (parsedData, fileName) => {
+    setIsLoading(true);
     try {
       const response = await fetch('http://localhost:5000/api/save-to-database', {
         method: 'POST',
@@ -152,24 +143,25 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
           source: 'excel'
         })
       });
-        
+      
       const result = await response.json();
       
       if (result.success) {
         toast.success(`Successfully uploaded "${fileName}" with ${parsedData.length} rows!`);
         await loadAllDatasets();
       } else {
-        toast.error('Failed to save to database');
+        toast.error('Failed to save to database: ' + result.error);
       }
     } catch (err) {
       console.error('Upload error:', err);
       toast.error('Failed to upload data');
     }
+    setIsLoading(false);
   };
-
+  
   const handleSQLImport = async (data, sourceName, datasetId) => {
     console.log(`📥 Import completed: ${data.length} rows, Dataset ID: ${datasetId}`);
-    toast.success(`Successfully imported ${data.length} rows from SQL Server!`);
+    toast.success(`Successfully imported ${data.length} rows from SQL Server! Real-time sync is active.`);
     await loadAllDatasets();
     
     if (datasetId) {
@@ -182,9 +174,66 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
     }
   };
   
+  const handleManualSave = async (data, fileName) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/save-to-database', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: data,
+          fileName: fileName.endsWith('.json') ? fileName : `${fileName}.json`,
+          source: 'manual'
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success(`Successfully saved ${data.length} rows!`);
+        await loadAllDatasets();
+      } else {
+        toast.error('Failed to save to database: ' + result.error);
+      }
+    } catch (err) {
+      console.error('Save error:', err);
+      toast.error('Failed to save data');
+    }
+    setIsLoading(false);
+  };
+
+  const handleSaveToDatabase = async (data, fileName) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/save-to-database', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: data,
+          fileName: fileName,
+          source: 'manual'
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success(`Data from "${fileName}" saved to database successfully!`);
+        await loadAllDatasets();
+        setUploadedData(null);
+        setUploadedFileName(null);
+      } else {
+        toast.error('Failed to save to database');
+      }
+    } catch (err) {
+      console.error('Save error:', err);
+      toast.error('Error saving to database');
+    }
+  };
+  
   const handleDiscardData = () => {
     setUploadedData(null);
     setUploadedFileName(null);
+    toast.info('Data discarded from view');
   };
   
   const handleEditData = () => {
@@ -195,11 +244,130 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
     setUploadedFileName(null);
   };
 
+  const handleDeleteClick = (dataset) => {
+    setDeleteConfirmDataset(dataset);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmDataset) return;
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/delete-dataset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ datasetId: deleteConfirmDataset.id })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success(`"${deleteConfirmDataset.file_name}" deleted successfully!`);
+        
+        if (selectedDataset?.id === deleteConfirmDataset.id) {
+          setSelectedDataset(null);
+          setSelectedDatasetData(null);
+          setIsViewingData(false);
+        }
+        
+        await loadAllDatasets();
+      } else {
+        toast.error('Failed to delete: ' + result.error);
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      toast.error('Error deleting data');
+    } finally {
+      setDeleteConfirmDataset(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmDataset(null);
+  };
+  
+  const handleEditClick = async (dataset) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/get-dataset-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ datasetId: dataset.id })
+      });
+      const result = await response.json();
+      
+      if (result.success && result.data && result.data.length > 0) {
+        setEditingData(result.data);
+        setEditingFileName(dataset.file_name);
+        setEditingDatasetId(dataset.id);
+        setShowEditModal(true);
+        console.log(`✅ Loaded ${result.data.length} rows for editing`);
+      } else {
+        toast.error('Failed to load data for editing');
+      }
+    } catch (err) {
+      console.error('Failed to load data for editing:', err);
+      toast.error('Error loading data for editing');
+    }
+    setIsLoading(false);
+  };
+  
+  const handleEditSave = async (editedData, fileName) => {
+    try {
+      const deleteResponse = await fetch('http://localhost:5000/api/delete-dataset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ datasetId: editingDatasetId })
+      });
+      
+      const deleteResult = await deleteResponse.json();
+      
+      if (deleteResult.success) {
+        const saveResponse = await fetch('http://localhost:5000/api/save-to-database', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            data: editedData,
+            fileName: fileName.endsWith('.json') ? fileName : `${fileName}.json`,
+            source: 'manual'
+          })
+        });
+        
+        const saveResult = await saveResponse.json();
+        
+        if (saveResult.success) {
+          toast.success(`Data updated successfully! ${editedData.length} rows saved.`);
+          await loadAllDatasets();
+          setShowEditModal(false);
+          setEditingData(null);
+          setEditingFileName(null);
+          setEditingDatasetId(null);
+        } else {
+          toast.error('Failed to save edited data');
+        }
+      } else {
+        toast.error('Failed to update data');
+      }
+    } catch (err) {
+      console.error('Edit save error:', err);
+      toast.error('Error saving edited data');
+    }
+  };
+  
+  const handleViewDataset = (dataset) => {
+    loadDatasetData(dataset);
+  };
+  
+  const handleCloseDataView = () => {
+    setIsViewingData(false);
+    setSelectedDataset(null);
+    setSelectedDatasetData(null);
+  };
+
   const handleCardClick = (sourceId) => {
     if (sourceId === 'sqlserver') {
       setShowSQLModal(true);
     } else if (sourceId === 'paste') {
-       console.log('📝 Opening Manual Entry modal'); 
+      console.log('📝 Opening Manual Entry modal'); 
       setShowManualModal(true);
     }
   };
@@ -234,11 +402,6 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
     },
   ];
 
-  const otherItems = [
-    { id: 'lakehouse', name: 'Lakehouse', icon: <FiFolder size={28} />, description: 'Store big data for cleaning, querying, reporting, and sharing.' },
-    { id: 'notebook', name: 'Notebook', icon: <FiBook size={28} />, description: 'Explore, analyze, and visualize data and build ML models.' }
-  ];
-
   const handleNavigateToHome = () => {
     if (onBackToDashboard) onBackToDashboard();
   };
@@ -265,8 +428,7 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
         </ExcelUploader>
       );
     }
-     console.log('Rendering card for:', source.id, source.name);
-    // Fixed: Added explicit cursor pointer and ensured onClick works
+    
     return (
       <div key={source.id} onClick={() => handleCardClick(source.id)} style={{ cursor: 'pointer' }}>
         {cardContent}
@@ -295,7 +457,7 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
         setActiveTab={setActiveTab}
         sidebarOpen={sidebarOpen}
         toggleSidebar={toggleSidebar}
-        onNavigateToDataConnection={() => { }}
+        onNavigateToDataConnection={() => {}}
         onNavigateToHome={handleNavigateToHome}
       />
       <Navbar sidebarOpen={sidebarOpen} />
@@ -310,6 +472,39 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
           </div>
         </div>
 
+        {/* Datasets List */}
+        <div className="datasets-section">
+          <div className="datasets-header">
+            <h2 className="datasets-title">📁 Your Datasets</h2>
+            <button 
+              className="refresh-btn" 
+              onClick={handleRefreshDatasets} 
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? <FiLoader className="spinner" size={16} /> : '🔄 Refresh'}
+            </button>
+          </div>
+          {datasets.length === 0 ? (
+            <div className="empty-datasets">
+              <p>No datasets found. Import data from SQL Server, Excel, or CSV to get started.</p>
+            </div>
+          ) : (
+            <div className="datasets-list">
+              {datasets.map(dataset => (
+                <DatasetCard
+                  key={dataset.id}
+                  dataset={dataset}
+                  onView={handleViewDataset}
+                  onEdit={handleEditClick}
+                  onDelete={handleDeleteClick}
+                  isSelected={selectedDataset?.id === dataset.id}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Uploaded Data Preview */}
         {uploadedData && uploadedData.length > 0 && (
           <DataPreview 
             data={uploadedData}
@@ -322,10 +517,11 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
       </div>
       
       {/* Full Data View Modal */}
-      {isViewingData && selectedDatasetData && (
+      {isViewingData && selectedDatasetData && selectedDataset && (
         <FullDataView
+          key={selectedDataset.id}
           data={selectedDatasetData}
-          fileName={selectedDataset?.file_name}
+          fileName={selectedDataset.file_name}
           onClose={handleCloseDataView}
           onEdit={() => handleEditClick(selectedDataset)}
           dataset={selectedDataset}
@@ -346,7 +542,7 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
         />
       )}
       
-      {/* Edit Modal - Now loads existing data properly */}
+      {/* Edit Modal */}
       {showEditModal && (
         <ManualEntry 
           onSave={handleEditSave}
@@ -364,20 +560,11 @@ const DataConnectionPage = ({ onBackToDashboard, onDataUpload }) => {
         />
       )}
       
-      {/* Manual Entry Modal (for creating new data) */}
+      {/* Manual Entry Modal */}
       {showManualModal && (
         <ManualEntry
           onSave={handleManualSave}
           onClose={() => setShowManualModal(false)}
-        />
-      )}
-      
-      {showEditModal && (
-        <ManualEntry 
-          onSave={handleManualSave}
-          onClose={() => setShowEditModal(false)}
-          initialData={editingData}
-          initialFileName={editingFileName}
         />
       )}
     </div>

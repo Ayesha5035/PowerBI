@@ -181,11 +181,14 @@
   background: var(--color-card-bg-alt);
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
+   background-color: rgb(181, 223, 245);
+   color: rgb(1, 6, 28);
 }
 
 .edit-btn:hover {
   background: var(--color-border);
   transform: translateY(-2px);
+  background-color: rgb(68, 134, 179);
 }
 /* Add to DataPreview.css */
 .delete-btn {
